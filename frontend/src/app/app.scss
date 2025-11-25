@@ -1,9 +1,7 @@
 :host {
   display: block;
   min-height: 100vh;
-  background: radial-gradient(circle at top left, #f2f5ff 10%, transparent 35%),
-    radial-gradient(circle at 80% 20%, #e1e8ff 15%, transparent 35%),
-    linear-gradient(180deg, #f8fafc 0%, #f3f4f6 35%, #eef2ff 100%);
+  background: linear-gradient(180deg, #0b1b3f 0%, #1d2f65 25%, #2c4fa0 55%, #5f8ff3 80%, #cfe2ff 100%);
   color: #0f172a;
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   padding: 2.5rem 1.5rem 4rem;
@@ -23,25 +21,27 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+  color: #e2e8f0;
 }
 
 .hero h1 {
   margin: 0.4rem 0 0.25rem;
   font-size: 2.25rem;
   letter-spacing: -0.03em;
+  color: #f8fafc;
 }
 
 .hero .subtitle {
   margin: 0;
-  color: #475569;
+  color: #dbeafe;
   max-width: 640px;
 }
 
 .eyebrow {
   display: inline-block;
   padding: 0.35rem 0.65rem;
-  background: #eef2ff;
-  color: #312e81;
+  background: rgba(255, 255, 255, 0.12);
+  color: #e0e7ff;
   border-radius: 999px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -51,7 +51,7 @@
 }
 
 .pill {
-  background: #0f172a;
+  background: rgba(15, 23, 42, 0.6);
   color: #e2e8f0;
   padding: 0.75rem 1rem;
   border-radius: 14px;
@@ -68,6 +68,12 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  align-items: center;
+}
+
+.card > * {
+  width: 100%;
+  max-width: 840px;
 }
 
 .form {

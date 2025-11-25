@@ -37,6 +37,7 @@ export class App implements OnInit, OnDestroy {
   private readonly maxPollAttempts = 30;
   private readonly pollIntervalMs = 1000;
   private lastAssistantMessageId: string | number | null = null;
+  private pendingUserMessage: string | null = null;
 
   constructor(private readonly chatService: ChatService) {}
 
@@ -57,7 +58,10 @@ export class App implements OnInit, OnDestroy {
     );
   }
 
-  onSubmit(): void {
+  onSubmit(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+
     if (!this.messageControl.valid || this.isSending()) {
       this.messageControl.markAsTouched();
       return;
@@ -69,20 +73,28 @@ export class App implements OnInit, OnDestroy {
       return;
     }
 
+    this.pendingUserMessage = message;
+
     if (!this.conversationId()) {
-      this.ensureConversation(() => this.dispatchMessage(message));
+      this.ensureConversation(() => this.dispatchMessage());
       return;
     }
 
-    this.dispatchMessage(message);
+    this.dispatchMessage();
   }
 
-  private dispatchMessage(message: string): void {
+  private dispatchMessage(): void {
+    const message = this.pendingUserMessage;
+    if (!message) {
+      return;
+    }
+
     const conversationId = this.conversationId();
     if (!conversationId) {
       return;
     }
 
+    this.pendingUserMessage = null;
     this.error.set(null);
     this.isSending.set(true);
     this.lastAssistantMessageId = this.latestAssistantId();
@@ -92,9 +104,22 @@ export class App implements OnInit, OnDestroy {
     this.chatService
       .sendMessage(conversationId, { content: message })
       .subscribe({
-        next: () => {
+        next: (response) => {
           this.messageControl.reset('');
-          this.loadMessages(() => this.scheduleResponsePolling());
+          this.isAwaitingResponse.set(false);
+          this.removePendingAssistantPlaceholder();
+
+          if (response) {
+            const assistantEntry: ChatEntry = {
+              role: this.normalizeRole(response.role),
+              text: response.content ?? '',
+              createdAt: response.createdAt ? new Date(response.createdAt) : new Date(),
+              id: response.id
+            };
+
+            this.lastAssistantMessageId = assistantEntry.id ?? this.lastAssistantMessageId;
+            this.appendToHistory(assistantEntry);
+          }
         },
         error: (err: HttpErrorResponse) => {
           const fallback =
@@ -102,7 +127,6 @@ export class App implements OnInit, OnDestroy {
           this.error.set(err.error?.message ?? err.message ?? fallback);
           this.isAwaitingResponse.set(false);
           this.removePendingAssistantPlaceholder();
-          this.stopPolling();
           this.isSending.set(false);
         },
         complete: () => this.isSending.set(false)

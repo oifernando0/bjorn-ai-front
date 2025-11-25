@@ -37,6 +37,7 @@ export class App implements OnInit, OnDestroy {
   private readonly maxPollAttempts = 30;
   private readonly pollIntervalMs = 1000;
   private lastAssistantMessageId: string | number | null = null;
+  private pendingUserMessage: string | null = null;
 
   constructor(private readonly chatService: ChatService) {}
 
@@ -72,20 +73,28 @@ export class App implements OnInit, OnDestroy {
       return;
     }
 
+    this.pendingUserMessage = message;
+
     if (!this.conversationId()) {
-      this.ensureConversation(() => this.dispatchMessage(message));
+      this.ensureConversation(() => this.dispatchMessage());
       return;
     }
 
-    this.dispatchMessage(message);
+    this.dispatchMessage();
   }
 
-  private dispatchMessage(message: string): void {
+  private dispatchMessage(): void {
+    const message = this.pendingUserMessage;
+    if (!message) {
+      return;
+    }
+
     const conversationId = this.conversationId();
     if (!conversationId) {
       return;
     }
 
+    this.pendingUserMessage = null;
     this.error.set(null);
     this.isSending.set(true);
     this.lastAssistantMessageId = this.latestAssistantId();

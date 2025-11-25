@@ -4,12 +4,12 @@
   background: linear-gradient(180deg, #0b1b3f 0%, #1d2f65 25%, #2c4fa0 55%, #5f8ff3 80%, #cfe2ff 100%);
   color: #0f172a;
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  padding: 2.5rem 1.5rem 4rem;
+  padding: 2.5rem clamp(1rem, 3vw, 2.5rem) 4rem;
   box-sizing: border-box;
 }
 
 .page {
-  max-width: 960px;
+  width: min(1160px, 100%);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -45,21 +45,6 @@
   border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
-.hero__badge {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0.5rem 0.9rem;
-  background: rgba(15, 23, 42, 0.7);
-  color: #e0f2fe;
-  border-radius: 999px;
-  font-weight: 700;
-  border: 1px solid rgba(99, 102, 241, 0.5);
-  box-shadow: 0 12px 30px rgba(14, 116, 144, 0.35);
-  letter-spacing: -0.01em;
-}
-
 .hero h1 {
   margin: 0.4rem 0 0.25rem;
   font-size: 2.25rem;
@@ -93,6 +78,11 @@
   border-radius: 14px;
   font-size: 0.9rem;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
+}
+
+.eyebrow--ghost {
+  background: rgba(255, 255, 255, 0.08);
+  color: #dbeafe;
 }
 
 .card {
@@ -238,6 +228,12 @@ button:not(:disabled):active {
   gap: 0.75rem;
 }
 
+.chat.compact {
+  max-height: 360px;
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+
 .entry {
   padding: 0.9rem 1rem;
   border-radius: 12px;
@@ -277,6 +273,87 @@ button:not(:disabled):active {
   padding: 1.25rem;
   border: 1px dashed #cbd5e1;
   border-radius: 12px;
+}
+
+.previous {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 20px;
+  padding: 1.5rem;
+  color: #e2e8f0;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.15);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.previous--open {
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.28);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.previous__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.previous__header h2 {
+  margin: 0.25rem 0;
+  color: #f8fafc;
+}
+
+.previous__header .subtitle {
+  color: #e2e8f0;
+}
+
+.previous__content {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.previous__list {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.previous__list button {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f8fafc;
+  padding: 0.5rem 0.75rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.1s ease;
+  box-shadow: none;
+}
+
+.previous__list button.active {
+  background: rgba(99, 102, 241, 0.25);
+  border-color: rgba(99, 102, 241, 0.6);
+}
+
+.previous__list button:disabled {
+  opacity: 0.6;
+}
+
+.previous__details {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+}
+
+.ghost {
+  align-self: center;
+  background: rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.75rem 1.1rem;
+  box-shadow: none;
 }
 
 @keyframes spin {

@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ChatService, ConversationMessage } from './chat.service';
 
 const ACTIVE_CONVERSATION_STORAGE_KEY = 'bjorn-active-conversation-id';
+const PREVIOUS_CONVERSATIONS_STORAGE_KEY = 'bjorn-previous-conversations';
 
 interface ChatEntry {
   role: 'user' | 'assistant';
@@ -31,6 +32,16 @@ export class App implements OnInit, OnDestroy {
   readonly conversationId = signal<string | number | null>(null);
   readonly isInitializing = signal(false);
   readonly isAwaitingResponse = signal(false);
+  readonly previousConversations = signal<(string | number)[]>([]);
+  readonly showPreviousConversations = signal(false);
+  readonly selectedPreviousConversationId = signal<string | number | null>(null);
+  readonly previousConversationHistory = signal<ChatEntry[]>([]);
+  readonly previousConversationLoading = signal(false);
+  readonly previousConversationError = signal<string | null>(null);
+  readonly displayHistory = computed(() => [...this.history()].reverse());
+  readonly previousDisplayHistory = computed(() =>
+    [...this.previousConversationHistory()].reverse()
+  );
   private readonly pendingAssistantId = 'pending-assistant';
   private pollTimer: ReturnType<typeof setTimeout> | null = null;
   private pollAttempts = 0;
@@ -43,6 +54,7 @@ export class App implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.ensureConversation();
+    this.hydratePreviousConversations();
   }
 
   ngOnDestroy(): void {
@@ -217,6 +229,11 @@ export class App implements OnInit, OnDestroy {
       return;
     }
 
+    const currentConversationId = this.conversationId();
+    if (currentConversationId) {
+      this.persistPreviousConversation(currentConversationId);
+    }
+
     this.stopPolling();
     this.isAwaitingResponse.set(false);
     this.isSending.set(false);
@@ -226,8 +243,16 @@ export class App implements OnInit, OnDestroy {
     this.messageControl.reset('');
     this.history.set([]);
     this.conversationId.set(null);
+    this.selectedPreviousConversationId.set(null);
+    this.previousConversationHistory.set([]);
+    this.previousConversationError.set(null);
+    this.previousConversationLoading.set(false);
     localStorage.removeItem(ACTIVE_CONVERSATION_STORAGE_KEY);
     this.createConversation(undefined, { skipLoadMessages: true });
+  }
+
+  togglePreviousConversations(): void {
+    this.showPreviousConversations.update((current) => !current);
   }
 
   private loadMessages(onComplete?: () => void, onError?: () => void): void {
@@ -244,6 +269,23 @@ export class App implements OnInit, OnDestroy {
         onError?.();
       },
       complete: () => onComplete?.()
+    });
+  }
+
+  loadPreviousConversation(conversationId: string | number): void {
+    this.selectedPreviousConversationId.set(conversationId);
+    this.previousConversationLoading.set(true);
+    this.previousConversationError.set(null);
+    this.previousConversationHistory.set([]);
+
+    this.chatService.listMessages(conversationId).subscribe({
+      next: (messages) => this.previousConversationHistory.set(this.mapMessages(messages)),
+      error: (err: HttpErrorResponse) => {
+        const fallback = 'Não foi possível recuperar mensagens desta conversa anterior.';
+        this.previousConversationError.set(err.error?.message ?? err.message ?? fallback);
+        this.previousConversationLoading.set(false);
+      },
+      complete: () => this.previousConversationLoading.set(false)
     });
   }
 
@@ -272,6 +314,45 @@ export class App implements OnInit, OnDestroy {
       createdAt: message.createdAt ? new Date(message.createdAt) : undefined,
       id: message.id
     }));
+  }
+
+  private hydratePreviousConversations(): void {
+    const stored = localStorage.getItem(PREVIOUS_CONVERSATIONS_STORAGE_KEY);
+
+    if (!stored) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(stored);
+
+      if (Array.isArray(parsed)) {
+        const normalized = parsed
+          .map((entry) => (typeof entry === 'number' || typeof entry === 'string' ? String(entry) : null))
+          .filter((entry): entry is string => Boolean(entry));
+
+        this.previousConversations.set(normalized);
+      }
+    } catch {
+      this.previousConversations.set([]);
+    }
+  }
+
+  private persistPreviousConversation(conversationId: string | number): void {
+    const normalizedId = String(conversationId);
+
+    this.previousConversations.update((current) => {
+      const unique = [normalizedId, ...current.map(String).filter((id) => id !== normalizedId)];
+      const limited = unique.slice(0, 10);
+
+      this.savePreviousConversations(limited);
+
+      return limited;
+    });
+  }
+
+  private savePreviousConversations(conversationIds: (string | number)[]): void {
+    localStorage.setItem(PREVIOUS_CONVERSATIONS_STORAGE_KEY, JSON.stringify(conversationIds));
   }
 
   private processLoadedMessages(messages: ConversationMessage[]): void {

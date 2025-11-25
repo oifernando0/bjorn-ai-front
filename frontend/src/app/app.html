@@ -2,18 +2,14 @@
   <section class="hero">
     <div class="hero__copy">
       <p class="eyebrow">Bjorn AI</p>
-      <h1>Converse com o seu assistente</h1>
+      <h1>Seu agente para engenharia elétrica</h1>
       <p class="subtitle">
-        Envie mensagens para o backend do Bjorn AI e visualize respostas usando os endpoints de conversa
-        REST.
+        Converse com o Bjorn, um especialista em engenharia elétrica que documenta, analisa e detalha
+        projetos técnicos para acelerar seu trabalho diário.
       </p>
-      <div class="pill">
-        Backend configurável em <code>src/environments/environment.ts</code> (padrão: http://localhost:8080)
-      </div>
     </div>
     <div class="hero__visual" aria-hidden="true">
       <img src="/bjorn-ai-hero.svg" alt="Ilustração de um agente elétrico Bjorn AI" />
-      <div class="hero__badge">Pronto para falar com o backend</div>
     </div>
   </section>
 
@@ -64,7 +60,7 @@
     </div>
 
     <div class="chat" *ngIf="history().length; else emptyState">
-      <div class="entry" *ngFor="let item of history()" [class.user]="item.role === 'user'">
+      <div class="entry" *ngFor="let item of displayHistory()" [class.user]="item.role === 'user'">
         <div class="entry__header">
           <span class="role">{{ item.role === 'user' ? 'Você' : 'Bjorn' }}</span>
           <span class="meta" *ngIf="item.createdAt">{{ item.createdAt | date: 'short' }}</span>
@@ -77,5 +73,78 @@
         <p>Envie sua primeira mensagem para iniciar a conversa.</p>
       </div>
     </ng-template>
+  </section>
+
+  <section
+    class="previous"
+    *ngIf="previousConversations().length"
+    [class.previous--open]="showPreviousConversations()"
+  >
+    <div class="previous__header">
+      <div>
+        <p class="eyebrow eyebrow--ghost">Histórico</p>
+        <h2>Conferir conversas anteriores</h2>
+        <p class="subtitle">
+          Revise rapidamente o que já foi discutido em conversas anteriores (#1, #2, #3...) sem sair da
+          conversa atual.
+        </p>
+      </div>
+      <button type="button" class="ghost" (click)="togglePreviousConversations()">
+        {{ showPreviousConversations() ? 'Ocultar histórico' : 'Mostrar histórico' }}
+      </button>
+    </div>
+
+    <div class="previous__content" *ngIf="showPreviousConversations()">
+      <div class="previous__list" role="list">
+        <button
+          type="button"
+          role="listitem"
+          *ngFor="let id of previousConversations()"
+          (click)="loadPreviousConversation(id)"
+          [class.active]="id === selectedPreviousConversationId()"
+          [disabled]="previousConversationLoading()"
+        >
+          #{{ id }}
+        </button>
+      </div>
+
+      <div class="previous__details" *ngIf="selectedPreviousConversationId(); else previousHint">
+        <div class="helper">
+          <span class="status" [class.loading]="previousConversationLoading()">
+            {{ previousConversationLoading() ? 'Carregando mensagens...' : 'Últimas mensagens' }}
+          </span>
+          <span class="meta">Conversa #{{ selectedPreviousConversationId() }}</span>
+        </div>
+
+        <div class="feedback" *ngIf="previousConversationError() as previousError">
+          <p>⚠️ {{ previousError }}</p>
+        </div>
+
+        <div class="chat compact" *ngIf="previousConversationHistory().length; else noPreviousMessages">
+          <div
+            class="entry"
+            *ngFor="let item of previousDisplayHistory()"
+            [class.user]="item.role === 'user'"
+          >
+            <div class="entry__header">
+              <span class="role">{{ item.role === 'user' ? 'Você' : 'Bjorn' }}</span>
+              <span class="meta" *ngIf="item.createdAt">{{ item.createdAt | date: 'short' }}</span>
+            </div>
+            <p>{{ item.text }}</p>
+          </div>
+        </div>
+        <ng-template #noPreviousMessages>
+          <div class="empty">
+            <p>Sem mensagens armazenadas para esta conversa.</p>
+          </div>
+        </ng-template>
+      </div>
+
+      <ng-template #previousHint>
+        <div class="empty">
+          <p>Selecione uma conversa anterior para revisar as mensagens.</p>
+        </div>
+      </ng-template>
+    </div>
   </section>
 </main>

@@ -4,6 +4,8 @@ import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ChatService, ConversationMessage } from './chat.service';
 
+const ACTIVE_CONVERSATION_STORAGE_KEY = 'bjorn-active-conversation-id';
+
 interface ChatEntry {
   role: 'user' | 'assistant';
   text: string;
@@ -29,16 +31,12 @@ export class App implements OnInit, OnDestroy {
   readonly conversationId = signal<string | number | null>(null);
   readonly isInitializing = signal(false);
   readonly isAwaitingResponse = signal(false);
-
-  private readonly storageKey = 'bjorn-active-conversation-id';
   private readonly pendingAssistantId = 'pending-assistant';
   private pollTimer: ReturnType<typeof setTimeout> | null = null;
   private pollAttempts = 0;
   private readonly maxPollAttempts = 30;
   private readonly pollIntervalMs = 1000;
   private lastAssistantMessageId: string | number | null = null;
-
-  private readonly storageKey = 'bjorn-active-conversation-id';
 
   constructor(private readonly chatService: ChatService) {}
 
@@ -119,7 +117,7 @@ export class App implements OnInit, OnDestroy {
     this.isInitializing.set(true);
     this.error.set(null);
 
-    const storedConversationId = localStorage.getItem(this.storageKey);
+    const storedConversationId = localStorage.getItem(ACTIVE_CONVERSATION_STORAGE_KEY);
     if (storedConversationId) {
       this.conversationId.set(storedConversationId);
       this.loadMessages(
@@ -128,7 +126,7 @@ export class App implements OnInit, OnDestroy {
           onReady?.();
         },
         () => {
-          localStorage.removeItem(this.storageKey);
+          localStorage.removeItem(ACTIVE_CONVERSATION_STORAGE_KEY);
           this.conversationId.set(null);
           this.isInitializing.set(false);
           this.createConversation(onReady);
@@ -155,7 +153,7 @@ export class App implements OnInit, OnDestroy {
             return;
           }
           this.conversationId.set(id);
-          localStorage.setItem(this.storageKey, String(id));
+          localStorage.setItem(ACTIVE_CONVERSATION_STORAGE_KEY, String(id));
           this.loadMessages();
           onReady?.();
         },

@@ -94,6 +94,7 @@ export class App implements OnInit, OnDestroy {
       return;
     }
 
+    this.messageControl.reset('');
     this.pendingUserMessage = null;
     this.error.set(null);
     this.isSending.set(true);

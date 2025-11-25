@@ -94,6 +94,7 @@ export class App implements OnInit, OnDestroy {
       return;
     }
 
+    this.messageControl.reset('');
     this.pendingUserMessage = null;
     this.error.set(null);
     this.isSending.set(true);
@@ -162,7 +163,11 @@ export class App implements OnInit, OnDestroy {
     this.createConversation(onReady);
   }
 
-  private createConversation(onReady?: () => void): void {
+  private createConversation(
+    onReady?: () => void,
+    options: { skipLoadMessages?: boolean } = {}
+  ): void {
+    const { skipLoadMessages = false } = options;
     this.isInitializing.set(true);
     this.error.set(null);
 
@@ -178,7 +183,11 @@ export class App implements OnInit, OnDestroy {
           }
           this.conversationId.set(id);
           localStorage.setItem(ACTIVE_CONVERSATION_STORAGE_KEY, String(id));
-          this.loadMessages();
+          if (!skipLoadMessages) {
+            this.loadMessages();
+          } else {
+            this.history.set([]);
+          }
           onReady?.();
         },
         error: (err: HttpErrorResponse) => {
@@ -189,6 +198,24 @@ export class App implements OnInit, OnDestroy {
         },
         complete: () => this.isInitializing.set(false)
       });
+  }
+
+  startNewConversation(): void {
+    if (this.isInitializing()) {
+      return;
+    }
+
+    this.stopPolling();
+    this.isAwaitingResponse.set(false);
+    this.isSending.set(false);
+    this.error.set(null);
+    this.pendingUserMessage = null;
+    this.lastAssistantMessageId = null;
+    this.messageControl.reset('');
+    this.history.set([]);
+    this.conversationId.set(null);
+    localStorage.removeItem(ACTIVE_CONVERSATION_STORAGE_KEY);
+    this.createConversation(undefined, { skipLoadMessages: true });
   }
 
   private loadMessages(onComplete?: () => void, onError?: () => void): void {

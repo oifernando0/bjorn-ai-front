@@ -233,10 +233,44 @@ button:not(:disabled):active {
   gap: 0.75rem;
 }
 
+.chat--main {
+  max-height: 460px;
+  overflow-y: auto;
+  padding: 0.75rem 0.85rem 0.75rem 0.75rem;
+  background: #f0ece2;
+  border: 1px solid #dcd3c5;
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #e2e8f0;
+}
+
+.chat--main::-webkit-scrollbar,
+.chat.compact::-webkit-scrollbar {
+  width: 10px;
+}
+
+.chat--main::-webkit-scrollbar-track,
+.chat.compact::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+
+.chat--main::-webkit-scrollbar-thumb,
+.chat.compact::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4f46e5, #06b6d4);
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+}
+
 .chat.compact {
   max-height: 360px;
   overflow: auto;
-  padding-right: 0.25rem;
+  padding: 0.75rem 0.85rem 0.75rem 0.75rem;
+  background: rgba(6, 12, 28, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 14px;
+  color: #e2e8f0;
 }
 
 .entry {
@@ -257,6 +291,17 @@ button:not(:disabled):active {
 .entry.user {
   background: #ece8ff;
   border-color: #cbc3ff;
+}
+
+.chat.compact .entry {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(148, 163, 184, 0.35);
+  color: #e2e8f0;
+}
+
+.chat.compact .entry.user {
+  background: rgba(99, 102, 241, 0.16);
+  border-color: rgba(99, 102, 241, 0.45);
 }
 
 .role {
@@ -289,18 +334,19 @@ button:not(:disabled):active {
 }
 
 .previous {
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(10, 17, 36, 0.86);
+  border: 1px solid rgba(148, 163, 184, 0.35);
   border-radius: 20px;
   padding: 1.5rem;
   color: #e2e8f0;
-  box-shadow: 0 26px 70px rgba(4, 6, 16, 0.3);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 26px 70px rgba(4, 6, 16, 0.38);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .previous--open {
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.28);
-  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.32);
+  border-color: rgba(255, 255, 255, 0.32);
+  transform: translateY(-2px);
 }
 
 .previous__header {
@@ -353,11 +399,12 @@ button:not(:disabled):active {
 }
 
 .previous__details {
-  background: #f7f5ef;
+  background: rgba(8, 13, 28, 0.75);
   border-radius: 16px;
   padding: 1rem;
-  border: 1px solid #e0d9cc;
-  color: #0f172a;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  color: #e2e8f0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .ghost {

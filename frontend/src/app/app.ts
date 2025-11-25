@@ -192,6 +192,24 @@ export class App implements OnInit, OnDestroy {
       });
   }
 
+  startNewConversation(): void {
+    if (this.isInitializing()) {
+      return;
+    }
+
+    this.stopPolling();
+    this.isAwaitingResponse.set(false);
+    this.isSending.set(false);
+    this.error.set(null);
+    this.pendingUserMessage = null;
+    this.lastAssistantMessageId = null;
+    this.messageControl.reset('');
+    this.history.set([]);
+    this.conversationId.set(null);
+    localStorage.removeItem(ACTIVE_CONVERSATION_STORAGE_KEY);
+    this.createConversation();
+  }
+
   private loadMessages(onComplete?: () => void, onError?: () => void): void {
     const conversationId = this.conversationId();
     if (!conversationId) {

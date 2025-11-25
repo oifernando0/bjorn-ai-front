@@ -76,7 +76,7 @@ export class App implements OnInit, OnDestroy {
     this.pendingUserMessage = message;
 
     if (!this.conversationId()) {
-      this.ensureConversation(() => this.dispatchMessage());
+      this.ensureConversation(() => this.dispatchMessage(), { skipLoadMessages: true });
       return;
     }
 
@@ -134,7 +134,12 @@ export class App implements OnInit, OnDestroy {
       });
   }
 
-  private ensureConversation(onReady?: () => void): void {
+  private ensureConversation(
+    onReady?: () => void,
+    options: { skipLoadMessages?: boolean } = {}
+  ): void {
+    const { skipLoadMessages = false } = options;
+
     if (this.conversationId() || this.isInitializing()) {
       return;
     }
@@ -154,16 +159,20 @@ export class App implements OnInit, OnDestroy {
           localStorage.removeItem(ACTIVE_CONVERSATION_STORAGE_KEY);
           this.conversationId.set(null);
           this.isInitializing.set(false);
-          this.createConversation(onReady);
+          this.createConversation(onReady, { skipLoadMessages });
         }
       );
       return;
     }
 
-    this.createConversation(onReady);
+    this.createConversation(onReady, { skipLoadMessages });
   }
 
-  private createConversation(onReady?: () => void): void {
+  private createConversation(
+    onReady?: () => void,
+    options: { skipLoadMessages?: boolean } = {}
+  ): void {
+    const { skipLoadMessages = false } = options;
     this.isInitializing.set(true);
     this.error.set(null);
 
@@ -179,7 +188,11 @@ export class App implements OnInit, OnDestroy {
           }
           this.conversationId.set(id);
           localStorage.setItem(ACTIVE_CONVERSATION_STORAGE_KEY, String(id));
-          this.loadMessages();
+          if (!skipLoadMessages) {
+            this.loadMessages();
+          } else {
+            this.history.set([]);
+          }
           onReady?.();
         },
         error: (err: HttpErrorResponse) => {
@@ -207,7 +220,7 @@ export class App implements OnInit, OnDestroy {
     this.history.set([]);
     this.conversationId.set(null);
     localStorage.removeItem(ACTIVE_CONVERSATION_STORAGE_KEY);
-    this.createConversation();
+    this.createConversation(undefined, { skipLoadMessages: true });
   }
 
   private loadMessages(onComplete?: () => void, onError?: () => void): void {

@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ChatService, ConversationMessage } from './chat.service';
+
+const ACTIVE_CONVERSATION_STORAGE_KEY = 'bjorn-active-conversation-id';
 
 interface ChatEntry {
   role: 'user' | 'assistant';
@@ -17,7 +19,7 @@ interface ChatEntry {
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App implements OnInit {
+export class App implements OnInit, OnDestroy {
   readonly messageControl = new FormControl('', {
     nonNullable: true,
     validators: [Validators.required, Validators.maxLength(500)]
@@ -28,11 +30,22 @@ export class App implements OnInit {
   readonly error = signal<string | null>(null);
   readonly conversationId = signal<string | number | null>(null);
   readonly isInitializing = signal(false);
+  readonly isAwaitingResponse = signal(false);
+  private readonly pendingAssistantId = 'pending-assistant';
+  private pollTimer: ReturnType<typeof setTimeout> | null = null;
+  private pollAttempts = 0;
+  private readonly maxPollAttempts = 30;
+  private readonly pollIntervalMs = 1000;
+  private lastAssistantMessageId: string | number | null = null;
 
   constructor(private readonly chatService: ChatService) {}
 
   ngOnInit(): void {
     this.ensureConversation();
+  }
+
+  ngOnDestroy(): void {
+    this.stopPolling();
   }
 
   get canSubmit(): boolean {
@@ -72,19 +85,24 @@ export class App implements OnInit {
 
     this.error.set(null);
     this.isSending.set(true);
+    this.lastAssistantMessageId = this.latestAssistantId();
     this.appendToHistory({ role: 'user', text: message, createdAt: new Date() });
+    this.startAwaitingResponse();
 
     this.chatService
       .sendMessage(conversationId, { content: message })
       .subscribe({
         next: () => {
           this.messageControl.reset('');
-          this.loadMessages();
+          this.loadMessages(() => this.scheduleResponsePolling());
         },
         error: (err: HttpErrorResponse) => {
           const fallback =
             'Não foi possível enviar a mensagem. Verifique se o backend está em execução e tente novamente.';
           this.error.set(err.error?.message ?? err.message ?? fallback);
+          this.isAwaitingResponse.set(false);
+          this.removePendingAssistantPlaceholder();
+          this.stopPolling();
           this.isSending.set(false);
         },
         complete: () => this.isSending.set(false)
@@ -99,6 +117,31 @@ export class App implements OnInit {
     this.isInitializing.set(true);
     this.error.set(null);
 
+    const storedConversationId = localStorage.getItem(ACTIVE_CONVERSATION_STORAGE_KEY);
+    if (storedConversationId) {
+      this.conversationId.set(storedConversationId);
+      this.loadMessages(
+        () => {
+          this.isInitializing.set(false);
+          onReady?.();
+        },
+        () => {
+          localStorage.removeItem(ACTIVE_CONVERSATION_STORAGE_KEY);
+          this.conversationId.set(null);
+          this.isInitializing.set(false);
+          this.createConversation(onReady);
+        }
+      );
+      return;
+    }
+
+    this.createConversation(onReady);
+  }
+
+  private createConversation(onReady?: () => void): void {
+    this.isInitializing.set(true);
+    this.error.set(null);
+
     this.chatService
       .createConversation({ title: 'Conversa Bjorn AI' })
       .subscribe({
@@ -110,6 +153,7 @@ export class App implements OnInit {
             return;
           }
           this.conversationId.set(id);
+          localStorage.setItem(ACTIVE_CONVERSATION_STORAGE_KEY, String(id));
           this.loadMessages();
           onReady?.();
         },
@@ -123,18 +167,20 @@ export class App implements OnInit {
       });
   }
 
-  private loadMessages(): void {
+  private loadMessages(onComplete?: () => void, onError?: () => void): void {
     const conversationId = this.conversationId();
     if (!conversationId) {
       return;
     }
 
     this.chatService.listMessages(conversationId).subscribe({
-      next: (messages) => this.history.set(this.mapMessages(messages)),
+      next: (messages) => this.processLoadedMessages(messages),
       error: (err: HttpErrorResponse) => {
         const fallback = 'Não foi possível carregar as mensagens desta conversa.';
         this.error.set(err.error?.message ?? err.message ?? fallback);
-      }
+        onError?.();
+      },
+      complete: () => onComplete?.()
     });
   }
 
@@ -165,8 +211,115 @@ export class App implements OnInit {
     }));
   }
 
+  private processLoadedMessages(messages: ConversationMessage[]): void {
+    const entries = this.mapMessages(messages);
+    const withAwaitingPlaceholder = this.applyAwaitingPlaceholder(entries);
+
+    this.history.set(withAwaitingPlaceholder);
+
+    if (!this.isAwaitingResponse()) {
+      this.stopPolling();
+    }
+  }
+
   private appendToHistory(entry: ChatEntry): void {
     this.history.update((current) => [...current, entry]);
+  }
+
+  private applyAwaitingPlaceholder(entries: ChatEntry[]): ChatEntry[] {
+    const latestAssistantId = this.latestAssistantId(entries);
+    const entriesWithoutPlaceholder = entries.filter(
+      (entry) => entry.id !== this.pendingAssistantId
+    );
+
+    if (!this.isAwaitingResponse()) {
+      this.lastAssistantMessageId = latestAssistantId ?? this.lastAssistantMessageId;
+      return entriesWithoutPlaceholder;
+    }
+
+    const hasNewAssistant =
+      latestAssistantId !== null && latestAssistantId !== this.lastAssistantMessageId;
+
+    if (hasNewAssistant) {
+      this.isAwaitingResponse.set(false);
+      this.lastAssistantMessageId = latestAssistantId;
+      return entriesWithoutPlaceholder;
+    }
+
+    this.lastAssistantMessageId = latestAssistantId ?? this.lastAssistantMessageId;
+
+    return [
+      ...entriesWithoutPlaceholder,
+      { role: 'assistant', text: 'Verificando documentação', id: this.pendingAssistantId }
+    ];
+  }
+
+  private latestAssistantId(entries: ChatEntry[] = this.history()): string | number | null {
+    const assistantEntries = entries.filter(
+      (entry) => entry.role === 'assistant' && entry.id !== this.pendingAssistantId
+    );
+    const latestAssistant = assistantEntries[assistantEntries.length - 1];
+
+    return latestAssistant?.id ?? null;
+  }
+
+  private startAwaitingResponse(): void {
+    this.isAwaitingResponse.set(true);
+    this.pollAttempts = 0;
+    this.stopPolling();
+    this.history.set(this.applyAwaitingPlaceholder(this.history()));
+  }
+
+  private scheduleResponsePolling(): void {
+    if (!this.isAwaitingResponse()) {
+      return;
+    }
+
+    this.pollAttempts = 0;
+    this.queueNextPoll();
+  }
+
+  private queueNextPoll(): void {
+    if (this.pollTimer) {
+      clearTimeout(this.pollTimer);
+    }
+
+    if (!this.isAwaitingResponse()) {
+      return;
+    }
+
+    this.pollTimer = setTimeout(() => this.pollForAssistantResponse(), this.pollIntervalMs);
+  }
+
+  private pollForAssistantResponse(): void {
+    if (!this.isAwaitingResponse()) {
+      return;
+    }
+
+    if (this.pollAttempts >= this.maxPollAttempts) {
+      this.isAwaitingResponse.set(false);
+      this.removePendingAssistantPlaceholder();
+      this.stopPolling();
+      return;
+    }
+
+    this.pollAttempts += 1;
+    this.loadMessages(() => this.queueNextPoll());
+  }
+
+  private stopPolling(): void {
+    if (this.pollTimer) {
+      clearTimeout(this.pollTimer);
+      this.pollTimer = null;
+    }
+
+    this.pollAttempts = 0;
+  }
+
+  private removePendingAssistantPlaceholder(): void {
+    this.history.update((entries) =>
+      entries.filter((entry) => entry.id !== this.pendingAssistantId)
+    );
   }
 
   private normalizeRole(role?: string): ChatEntry['role'] {

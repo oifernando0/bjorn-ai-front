@@ -112,6 +112,39 @@
   max-width: 840px;
 }
 
+.conversation {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: #f1f5f9;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.conversation--loading {
+  color: #475569;
+  font-weight: 500;
+}
+
+.conversation .label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.75rem;
+  color: #475569;
+}
+
+.conversation .value {
+  font-size: 1rem;
+  color: #0f172a;
+  background: #e0e7ff;
+  padding: 0.35rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid #c7d2fe;
+}
+
 .form {
   display: flex;
   flex-direction: column;

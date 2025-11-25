@@ -4,9 +4,12 @@
       <p class="eyebrow">Bjorn AI</p>
       <h1>Converse com o seu assistente</h1>
       <p class="subtitle">
-        Envie uma mensagem para o backend do Bjorn AI e visualize a resposta sem sair do navegador.
+        Envie mensagens para o backend do Bjorn AI e visualize respostas usando os endpoints de conversa
+        REST.
       </p>
-      <div class="pill">Backend configurável em <code>src/environments/environment.ts</code></div>
+      <div class="pill">
+        Backend configurável em <code>src/environments/environment.ts</code> (padrão: http://localhost:8080)
+      </div>
     </div>
     <div class="hero__visual" aria-hidden="true">
       <img src="/bjorn-ai-hero.svg" alt="Ilustração de um agente elétrico Bjorn AI" />
@@ -15,6 +18,16 @@
   </section>
 
   <section class="card">
+    <div class="conversation" *ngIf="conversationId(); else loadingConversation">
+      <span class="label">Conversa ativa</span>
+      <span class="value">#{{ conversationId() }}</span>
+    </div>
+    <ng-template #loadingConversation>
+      <div class="conversation conversation--loading">
+        <span class="label">Iniciando conversa com o backend...</span>
+      </div>
+    </ng-template>
+
     <form class="form" (ngSubmit)="onSubmit()" novalidate>
       <label for="message">Mensagem</label>
       <textarea
@@ -31,7 +44,12 @@
           A mensagem é obrigatória e deve ter no máximo 500 caracteres.
         </span>
         <span class="status" [class.loading]="isSending()">
-          {{ isSending() ? 'Enviando...' : 'Pronto para enviar' }}
+          <ng-container *ngIf="isInitializing(); else sendingState">
+            {{ 'Conectando ao backend...' }}
+          </ng-container>
+          <ng-template #sendingState>
+            {{ isSending() ? 'Enviando...' : 'Pronto para enviar' }}
+          </ng-template>
         </span>
       </div>
 

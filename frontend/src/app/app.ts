@@ -57,7 +57,10 @@ export class App implements OnInit, OnDestroy {
     );
   }
 
-  onSubmit(): void {
+  onSubmit(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+
     if (!this.messageControl.valid || this.isSending()) {
       this.messageControl.markAsTouched();
       return;

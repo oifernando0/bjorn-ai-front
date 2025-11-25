@@ -104,9 +104,22 @@ export class App implements OnInit, OnDestroy {
     this.chatService
       .sendMessage(conversationId, { content: message })
       .subscribe({
-        next: () => {
+        next: (response) => {
           this.messageControl.reset('');
-          this.loadMessages(() => this.scheduleResponsePolling());
+          this.isAwaitingResponse.set(false);
+          this.removePendingAssistantPlaceholder();
+
+          if (response) {
+            const assistantEntry: ChatEntry = {
+              role: this.normalizeRole(response.role),
+              text: response.content ?? '',
+              createdAt: response.createdAt ? new Date(response.createdAt) : new Date(),
+              id: response.id
+            };
+
+            this.lastAssistantMessageId = assistantEntry.id ?? this.lastAssistantMessageId;
+            this.appendToHistory(assistantEntry);
+          }
         },
         error: (err: HttpErrorResponse) => {
           const fallback =
@@ -114,7 +127,6 @@ export class App implements OnInit, OnDestroy {
           this.error.set(err.error?.message ?? err.message ?? fallback);
           this.isAwaitingResponse.set(false);
           this.removePendingAssistantPlaceholder();
-          this.stopPolling();
           this.isSending.set(false);
         },
         complete: () => this.isSending.set(false)

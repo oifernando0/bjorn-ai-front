@@ -10,7 +10,8 @@ interface Conversation {
 }
 
 interface SendMessagePayload {
-  content: string;
+  content?: string;
+  message?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -43,9 +44,19 @@ export class ChatService {
   }
 
   sendMessage(conversationId: string | number, payload: SendMessagePayload) {
+    const formData = new FormData();
+
+    if (payload.content) {
+      formData.append('content', payload.content);
+    }
+
+    if (payload.message) {
+      formData.append('message', payload.message);
+    }
+
     return this.http.post<ConversationMessage>(
       `${this.conversationsEndpoint}/${conversationId}/messages`,
-      payload
+      formData
     );
   }
 

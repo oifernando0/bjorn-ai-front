@@ -103,7 +103,14 @@ export class App implements OnInit, OnDestroy {
     this.startAwaitingResponse();
 
     this.chatService
-      .sendMessage(conversationId, { content: message })
+      .sendMessage(conversationId, {
+        content: message,
+        message: JSON.stringify({
+          role: 'USER',
+          content: message,
+          metadata: { specialist: 'ELECTRICAL' }
+        })
+      })
       .subscribe({
         next: (response) => {
           this.messageControl.reset('');

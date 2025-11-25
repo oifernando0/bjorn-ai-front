@@ -76,7 +76,7 @@ export class App implements OnInit, OnDestroy {
     this.pendingUserMessage = message;
 
     if (!this.conversationId()) {
-      this.ensureConversation(() => this.dispatchMessage());
+      this.ensureConversation(() => this.dispatchMessage(), { skipLoadMessages: true });
       return;
     }
 
@@ -134,7 +134,12 @@ export class App implements OnInit, OnDestroy {
       });
   }
 
-  private ensureConversation(onReady?: () => void): void {
+  private ensureConversation(
+    onReady?: () => void,
+    options: { skipLoadMessages?: boolean } = {}
+  ): void {
+    const { skipLoadMessages = false } = options;
+
     if (this.conversationId() || this.isInitializing()) {
       return;
     }
@@ -154,13 +159,13 @@ export class App implements OnInit, OnDestroy {
           localStorage.removeItem(ACTIVE_CONVERSATION_STORAGE_KEY);
           this.conversationId.set(null);
           this.isInitializing.set(false);
-          this.createConversation(onReady);
+          this.createConversation(onReady, { skipLoadMessages });
         }
       );
       return;
     }
 
-    this.createConversation(onReady);
+    this.createConversation(onReady, { skipLoadMessages });
   }
 
   private createConversation(

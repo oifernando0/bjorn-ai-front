@@ -245,6 +245,14 @@ button:not(:disabled):active {
   border: 1px solid #e2e8f0;
 }
 
+.entry__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
 .entry.user {
   background: #eef2ff;
   border-color: #c7d2fe;
@@ -255,6 +263,12 @@ button:not(:disabled):active {
   font-weight: 700;
   color: #334155;
   margin-bottom: 0.25rem;
+}
+
+.meta {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-weight: 600;
 }
 
 .empty {

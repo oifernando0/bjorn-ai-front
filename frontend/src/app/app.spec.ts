@@ -35,4 +35,38 @@ describe('App', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('h1')?.textContent).toContain('Converse com o seu assistente');
   });
+
+  it('should map backend message responses into chat history', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    httpMock.expectOne('http://localhost:8080/api/conversations').flush({ id: '42' });
+
+    httpMock
+      .expectOne('http://localhost:8080/api/conversations/42/messages')
+      .flush([
+        {
+          id: 2,
+          role: 'ASSISTANT',
+          content: 'Oi, posso ajudar?',
+          createdAt: '2024-01-01T12:01:00Z'
+        },
+        {
+          id: 1,
+          role: 'USER',
+          content: 'Olá Bjorn!',
+          createdAt: '2024-01-01T12:00:00Z'
+        }
+      ]);
+
+    fixture.detectChanges();
+
+    const entries = fixture.nativeElement.querySelectorAll('.entry');
+    expect(entries.length).toBe(2);
+    expect(entries[0].textContent).toContain('Olá Bjorn!');
+    expect(entries[1].textContent).toContain('Oi, posso ajudar?');
+    expect(entries[0].querySelector('.role')?.textContent).toContain('Você');
+    expect(entries[1].querySelector('.role')?.textContent).toContain('Bjorn');
+    expect(entries[0].querySelector('.meta')?.textContent?.trim()).toBeTruthy();
+  });
 });

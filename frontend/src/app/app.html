@@ -62,7 +62,10 @@
 
     <div class="chat" *ngIf="history().length; else emptyState">
       <div class="entry" *ngFor="let item of history()" [class.user]="item.role === 'user'">
-        <span class="role">{{ item.role === 'user' ? 'Você' : 'Bjorn' }}</span>
+        <div class="entry__header">
+          <span class="role">{{ item.role === 'user' ? 'Você' : 'Bjorn' }}</span>
+          <span class="meta" *ngIf="item.createdAt">{{ item.createdAt | date: 'short' }}</span>
+        </div>
         <p>{{ item.text }}</p>
       </div>
     </div>

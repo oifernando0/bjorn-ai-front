@@ -18,7 +18,6 @@ export interface ConversationMessage {
   id?: string | number;
   role?: string;
   content?: string;
-  message?: string;
   metadata?: Record<string, unknown>;
   createdAt?: string;
 }

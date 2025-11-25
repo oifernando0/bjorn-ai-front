@@ -7,6 +7,8 @@ import { ChatService, ConversationMessage } from './chat.service';
 interface ChatEntry {
   role: 'user' | 'assistant';
   text: string;
+  createdAt?: Date;
+  id?: string | number;
 }
 
 @Component({
@@ -70,7 +72,7 @@ export class App implements OnInit {
 
     this.error.set(null);
     this.isSending.set(true);
-    this.appendToHistory({ role: 'user', text: message });
+    this.appendToHistory({ role: 'user', text: message, createdAt: new Date() });
 
     this.chatService
       .sendMessage(conversationId, { content: message })
@@ -137,13 +139,41 @@ export class App implements OnInit {
   }
 
   private mapMessages(messages: ConversationMessage[]): ChatEntry[] {
-    return messages.map((message) => ({
-      role: message.role === 'assistant' ? 'assistant' : 'user',
-      text: message.content ?? message.message ?? ''
+    const sortedMessages = [...messages].sort((a, b) => {
+      const aDate = a.createdAt ? new Date(a.createdAt).getTime() : undefined;
+      const bDate = b.createdAt ? new Date(b.createdAt).getTime() : undefined;
+
+      if (typeof aDate === 'number' && typeof bDate === 'number') {
+        return aDate - bDate;
+      }
+
+      const aId = typeof a.id === 'number' ? a.id : Number(a.id);
+      const bId = typeof b.id === 'number' ? b.id : Number(b.id);
+
+      if (!Number.isNaN(aId) && !Number.isNaN(bId)) {
+        return aId - bId;
+      }
+
+      return 0;
+    });
+
+    return sortedMessages.map((message) => ({
+      role: this.normalizeRole(message.role),
+      text: message.content ?? '',
+      createdAt: message.createdAt ? new Date(message.createdAt) : undefined,
+      id: message.id
     }));
   }
 
   private appendToHistory(entry: ChatEntry): void {
     this.history.update((current) => [...current, entry]);
+  }
+
+  private normalizeRole(role?: string): ChatEntry['role'] {
+    if (typeof role !== 'string') {
+      return 'user';
+    }
+
+    return role.toLowerCase() === 'assistant' ? 'assistant' : 'user';
   }
 }

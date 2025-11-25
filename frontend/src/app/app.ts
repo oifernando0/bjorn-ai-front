@@ -42,6 +42,9 @@ export class App implements OnInit, OnDestroy {
   readonly previousDisplayHistory = computed(() =>
     [...this.previousConversationHistory()].reverse()
   );
+  readonly hasPreviousConversations = computed(
+    () => this.previousConversations().length > 0
+  );
   private readonly pendingAssistantId = 'pending-assistant';
   private pollTimer: ReturnType<typeof setTimeout> | null = null;
   private pollAttempts = 0;

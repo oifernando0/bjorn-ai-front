@@ -275,6 +275,14 @@ button:not(:disabled):active {
   border-radius: 12px;
 }
 
+.empty.inline {
+  text-align: left;
+  border-style: solid;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
 .previous {
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.22);

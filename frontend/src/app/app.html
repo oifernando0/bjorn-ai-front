@@ -75,27 +75,30 @@
     </ng-template>
   </section>
 
-  <section
-    class="previous"
-    *ngIf="previousConversations().length"
-    [class.previous--open]="showPreviousConversations()"
-  >
+  <section class="previous" [class.previous--open]="showPreviousConversations()">
     <div class="previous__header">
       <div>
         <p class="eyebrow eyebrow--ghost">Histórico</p>
         <h2>Conferir conversas anteriores</h2>
-        <p class="subtitle">
+        <p class="subtitle" *ngIf="hasPreviousConversations(); else noHistoryCopy">
           Revise rapidamente o que já foi discutido em conversas anteriores (#1, #2, #3...) sem sair da
           conversa atual.
         </p>
+        <ng-template #noHistoryCopy>
+          <p class="subtitle">
+            As conversas anteriores aparecem aqui quando você inicia uma nova sessão. Clique para abrir o
+            painel e voltar para elas sempre que precisar.
+          </p>
+        </ng-template>
       </div>
       <button type="button" class="ghost" (click)="togglePreviousConversations()">
         {{ showPreviousConversations() ? 'Ocultar histórico' : 'Mostrar histórico' }}
+        <span *ngIf="hasPreviousConversations()">({{ previousConversations().length }})</span>
       </button>
     </div>
 
     <div class="previous__content" *ngIf="showPreviousConversations()">
-      <div class="previous__list" role="list">
+      <div class="previous__list" role="list" *ngIf="hasPreviousConversations(); else emptyPrevious">
         <button
           type="button"
           role="listitem"
@@ -107,6 +110,12 @@
           #{{ id }}
         </button>
       </div>
+
+      <ng-template #emptyPrevious>
+        <div class="empty inline">
+          <p>Nenhuma conversa anterior encontrada. Inicie uma nova conversa para salvá-la aqui.</p>
+        </div>
+      </ng-template>
 
       <div class="previous__details" *ngIf="selectedPreviousConversationId(); else previousHint">
         <div class="helper">

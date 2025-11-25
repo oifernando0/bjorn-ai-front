@@ -29,6 +29,8 @@ export class App implements OnInit {
   readonly conversationId = signal<string | number | null>(null);
   readonly isInitializing = signal(false);
 
+  private readonly storageKey = 'bjorn-active-conversation-id';
+
   constructor(private readonly chatService: ChatService) {}
 
   ngOnInit(): void {
@@ -99,6 +101,31 @@ export class App implements OnInit {
     this.isInitializing.set(true);
     this.error.set(null);
 
+    const storedConversationId = localStorage.getItem(this.storageKey);
+    if (storedConversationId) {
+      this.conversationId.set(storedConversationId);
+      this.loadMessages(
+        () => {
+          this.isInitializing.set(false);
+          onReady?.();
+        },
+        () => {
+          localStorage.removeItem(this.storageKey);
+          this.conversationId.set(null);
+          this.isInitializing.set(false);
+          this.createConversation(onReady);
+        }
+      );
+      return;
+    }
+
+    this.createConversation(onReady);
+  }
+
+  private createConversation(onReady?: () => void): void {
+    this.isInitializing.set(true);
+    this.error.set(null);
+
     this.chatService
       .createConversation({ title: 'Conversa Bjorn AI' })
       .subscribe({
@@ -110,6 +137,7 @@ export class App implements OnInit {
             return;
           }
           this.conversationId.set(id);
+          localStorage.setItem(this.storageKey, String(id));
           this.loadMessages();
           onReady?.();
         },
@@ -123,7 +151,7 @@ export class App implements OnInit {
       });
   }
 
-  private loadMessages(): void {
+  private loadMessages(onComplete?: () => void, onError?: () => void): void {
     const conversationId = this.conversationId();
     if (!conversationId) {
       return;
@@ -134,7 +162,9 @@ export class App implements OnInit {
       error: (err: HttpErrorResponse) => {
         const fallback = 'Não foi possível carregar as mensagens desta conversa.';
         this.error.set(err.error?.message ?? err.message ?? fallback);
-      }
+        onError?.();
+      },
+      complete: () => onComplete?.()
     });
   }
 

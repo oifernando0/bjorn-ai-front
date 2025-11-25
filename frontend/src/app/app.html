@@ -59,7 +59,7 @@
       <p>⚠️ {{ errorMessage }}</p>
     </div>
 
-    <div class="chat" *ngIf="history().length; else emptyState">
+    <div class="chat chat--main" *ngIf="history().length; else emptyState">
       <div class="entry" *ngFor="let item of displayHistory()" [class.user]="item.role === 'user'">
         <div class="entry__header">
           <span class="role">{{ item.role === 'user' ? 'Você' : 'Bjorn' }}</span>

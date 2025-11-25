@@ -21,6 +21,9 @@
     <div class="conversation" *ngIf="conversationId(); else loadingConversation">
       <span class="label">Conversa ativa</span>
       <span class="value">#{{ conversationId() }}</span>
+      <button type="button" (click)="startNewConversation()" [disabled]="isInitializing() || isSending()">
+        Nova conversa
+      </button>
     </div>
     <ng-template #loadingConversation>
       <div class="conversation conversation--loading">

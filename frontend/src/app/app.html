@@ -13,6 +13,76 @@
     </div>
   </section>
 
+  <section class="card uploads">
+    <div class="uploads__header">
+      <div>
+        <p class="eyebrow">Base de conhecimento</p>
+        <h2>Enviar documentos em PDF</h2>
+        <p class="subtitle">
+          Anexe os arquivos da sua disciplina e envie para <code>http://localhost:8080/api/knowledge/ELECTRICAL/docs</code>.
+          Aceitamos múltiplos PDFs (até ~1GB) e mostraremos o progresso do envio.
+        </p>
+      </div>
+      <div class="uploads__actions">
+        <label class="upload-button" for="documentInput">
+          <input
+            id="documentInput"
+            type="file"
+            multiple
+            accept="application/pdf"
+            (change)="onFilesSelected($event)"
+          />
+          Anexar documentos
+        </label>
+        <button type="button" (click)="uploadDocuments()" [disabled]="!canUploadDocuments()">
+          Enviar para indexação
+        </button>
+      </div>
+    </div>
+
+    <div class="uploads__helper">
+      <span>{{ uploadItems().length }} arquivo(s) selecionado(s)</span>
+      <span>Total: {{ formatBytes(totalUploadSize()) }}</span>
+      <span *ngIf="isUploadingDocuments()">Progresso: {{ uploadProgress() }}%</span>
+    </div>
+
+    <div class="feedback" *ngIf="uploadError() as uploadErrorMessage">
+      <p>⚠️ {{ uploadErrorMessage }}</p>
+    </div>
+
+    <div class="success" *ngIf="uploadSuccess()">
+      ✅ Documentos enviados para indexação com sucesso.
+    </div>
+
+    <div class="uploads__grid" *ngIf="uploadItems().length; else emptyUploads">
+      <div class="upload-card" *ngFor="let item of uploadItems(); let i = index">
+        <div class="upload-card__info">
+          <span class="upload-card__title" [title]="item.file.name">{{ item.file.name }}</span>
+          <span class="upload-card__meta">{{ formatBytes(item.file.size) }}</span>
+        </div>
+        <div class="upload-card__progress" *ngIf="isUploadingDocuments()">
+          <div
+            class="upload-card__bar"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            [attr.aria-valuenow]="uploadProgress()"
+            [style.width.%]="uploadProgress()"
+          ></div>
+          <span class="upload-card__progress-value">{{ uploadProgress() }}%</span>
+        </div>
+        <button type="button" class="ghost" (click)="removeUploadItem(i)" [disabled]="isUploadingDocuments()">
+          Remover
+        </button>
+      </div>
+    </div>
+    <ng-template #emptyUploads>
+      <div class="empty">
+        <p>Nenhum PDF selecionado. Clique em “Anexar documentos” para começar.</p>
+      </div>
+    </ng-template>
+  </section>
+
   <section class="card">
     <div class="conversation" *ngIf="conversationId(); else loadingConversation">
       <span class="label">Conversa ativa</span>

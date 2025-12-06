@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ChatService, ConversationMessage } from './chat.service';
+import { KnowledgeService } from './knowledge.service';
 
 const ACTIVE_CONVERSATION_STORAGE_KEY = 'bjorn-active-conversation-id';
 const PREVIOUS_CONVERSATIONS_STORAGE_KEY = 'bjorn-previous-conversations';
@@ -12,6 +13,10 @@ interface ChatEntry {
   text: string;
   createdAt?: Date;
   id?: string | number;
+}
+
+interface UploadItem {
+  file: File;
 }
 
 @Component({
@@ -27,6 +32,10 @@ export class App implements OnInit, OnDestroy {
   });
 
   readonly history = signal<ChatEntry[]>([]);
+  readonly uploadItems = signal<UploadItem[]>([]);
+  readonly uploadProgress = signal(0);
+  readonly uploadError = signal<string | null>(null);
+  readonly uploadSuccess = signal(false);
   readonly isSending = signal(false);
   readonly error = signal<string | null>(null);
   readonly conversationId = signal<string | number | null>(null);
@@ -39,11 +48,20 @@ export class App implements OnInit, OnDestroy {
   readonly previousConversationLoading = signal(false);
   readonly previousConversationError = signal<string | null>(null);
   readonly displayHistory = computed(() => [...this.history()].reverse());
+  readonly totalUploadSize = computed(() =>
+    this.uploadItems().reduce((size, item) => size + item.file.size, 0)
+  );
   readonly previousDisplayHistory = computed(() =>
     [...this.previousConversationHistory()].reverse()
   );
   readonly hasPreviousConversations = computed(
     () => this.previousConversations().length > 0
+  );
+  readonly canUploadDocuments = computed(
+    () => this.uploadItems().length > 0 && !this.isUploadingDocuments()
+  );
+  readonly isUploadingDocuments = computed(
+    () => this.uploadProgress() > 0 && this.uploadProgress() < 100
   );
   private readonly pendingAssistantId = 'pending-assistant';
   private pollTimer: ReturnType<typeof setTimeout> | null = null;
@@ -53,7 +71,10 @@ export class App implements OnInit, OnDestroy {
   private lastAssistantMessageId: string | number | null = null;
   private pendingUserMessage: string | null = null;
 
-  constructor(private readonly chatService: ChatService) {}
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly knowledgeService: KnowledgeService
+  ) {}
 
   ngOnInit(): void {
     this.ensureConversation();
@@ -71,6 +92,91 @@ export class App implements OnInit, OnDestroy {
       !this.isInitializing() &&
       Boolean(this.conversationId())
     );
+  }
+
+  onFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+
+    if (!files.length) {
+      return;
+    }
+
+    const existingKeys = new Set(
+      this.uploadItems().map((item) => this.fileKey(item.file))
+    );
+
+    const newItems = files
+      .filter((file) => !existingKeys.has(this.fileKey(file)))
+      .map((file) => ({ file }));
+
+    if (newItems.length) {
+      this.uploadItems.set([...this.uploadItems(), ...newItems]);
+      this.uploadSuccess.set(false);
+      this.uploadError.set(null);
+    }
+
+    input.value = '';
+  }
+
+  removeUploadItem(index: number): void {
+    if (this.isUploadingDocuments()) {
+      return;
+    }
+
+    this.uploadItems.update((items) => items.filter((_, idx) => idx !== index));
+  }
+
+  uploadDocuments(): void {
+    if (!this.uploadItems().length || this.isUploadingDocuments()) {
+      return;
+    }
+
+    const files = this.uploadItems().map((item) => item.file);
+    this.uploadProgress.set(1);
+    this.uploadError.set(null);
+    this.uploadSuccess.set(false);
+
+    this.knowledgeService.uploadDocuments('ELECTRICAL', files).subscribe({
+      next: (event) => {
+        if (event.type === HttpEventType.UploadProgress) {
+          const total = event.total ?? this.totalUploadSize();
+          const loaded = event.loaded ?? 0;
+          const percent = total ? Math.min(100, Math.round((loaded / total) * 100)) : 50;
+          this.uploadProgress.set(percent);
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        const fallback =
+          'Não foi possível enviar os documentos. Verifique se o backend está em execução e tente novamente.';
+        this.uploadError.set(err.error?.message ?? err.message ?? fallback);
+        this.uploadProgress.set(0);
+      },
+      complete: () => {
+        this.uploadProgress.set(100);
+        this.uploadItems.set([]);
+        this.uploadSuccess.set(true);
+        setTimeout(() => this.uploadProgress.set(0), 500);
+      }
+    });
+  }
+
+  formatBytes(bytes: number): string {
+    if (!bytes) {
+      return '0 B';
+    }
+
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const exponent = Math.min(
+      Math.floor(Math.log(bytes) / Math.log(1024)),
+      units.length - 1
+    );
+    const value = bytes / Math.pow(1024, exponent);
+    return `${value.toFixed(value >= 10 || exponent === 0 ? 0 : 1)} ${units[exponent]}`;
+  }
+
+  private fileKey(file: File): string {
+    return `${file.name}-${file.size}-${file.lastModified}`;
   }
 
   onSubmit(event?: Event): void {

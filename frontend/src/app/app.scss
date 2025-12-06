@@ -102,6 +102,110 @@
   align-items: center;
 }
 
+.uploads {
+  gap: 0.75rem;
+}
+
+.uploads__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+}
+
+.uploads__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.upload-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.85rem 1.2rem;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 1px solid #0f172a;
+  box-shadow: 0 16px 50px rgba(15, 23, 42, 0.25);
+  font-weight: 700;
+}
+
+.upload-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.uploads__helper {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  color: #475569;
+  font-weight: 600;
+  width: 100%;
+}
+
+.uploads__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.upload-card {
+  background: #f0ede4;
+  border: 1px solid #e0d9cc;
+  border-radius: 14px;
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.upload-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.upload-card__title {
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.upload-card__meta {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.upload-card__progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.upload-card__bar {
+  flex: 1;
+  height: 8px;
+  background: linear-gradient(90deg, #4f46e5, #06b6d4);
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.upload-card__progress-value {
+  font-weight: 700;
+  color: #0f172a;
+}
+
 .card > * {
   width: 100%;
   max-width: 840px;
@@ -227,6 +331,15 @@ button:not(:disabled):active {
   padding: 0.85rem 1rem;
   border-radius: 12px;
   font-weight: 600;
+}
+
+.success {
+  background: #ecfdf3;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  font-weight: 700;
 }
 
 .chat {

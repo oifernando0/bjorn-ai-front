@@ -3,7 +3,7 @@ import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ChatService, ConversationMessage } from './chat.service';
-import { KnowledgeService } from './knowledge.service';
+import { KnowledgeDocument, KnowledgeService } from './knowledge.service';
 
 const ACTIVE_CONVERSATION_STORAGE_KEY = 'bjorn-active-conversation-id';
 const PREVIOUS_CONVERSATIONS_STORAGE_KEY = 'bjorn-previous-conversations';
@@ -17,6 +17,13 @@ interface ChatEntry {
 
 interface UploadItem {
   file: File;
+}
+
+interface AttachedDocument {
+  id?: string | number;
+  name: string;
+  size?: number;
+  uploadedAt?: Date;
 }
 
 @Component({
@@ -47,6 +54,9 @@ export class App implements OnInit, OnDestroy {
   readonly previousConversationHistory = signal<ChatEntry[]>([]);
   readonly previousConversationLoading = signal(false);
   readonly previousConversationError = signal<string | null>(null);
+  readonly knowledgeDocuments = signal<AttachedDocument[]>([]);
+  readonly knowledgeDocumentsLoading = signal(false);
+  readonly knowledgeDocumentsError = signal<string | null>(null);
   readonly displayHistory = computed(() => [...this.history()].reverse());
   readonly totalUploadSize = computed(() =>
     this.uploadItems().reduce((size, item) => size + item.file.size, 0)
@@ -80,6 +90,7 @@ export class App implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.ensureConversation();
     this.hydratePreviousConversations();
+    this.loadKnowledgeDocuments();
   }
 
   ngOnDestroy(): void {
@@ -165,6 +176,7 @@ export class App implements OnInit, OnDestroy {
         this.uploadProgress.set(100);
         this.uploadItems.set([]);
         this.uploadSuccess.set(true);
+        this.loadKnowledgeDocuments();
         setTimeout(() => this.uploadProgress.set(0), 500);
       }
     });
@@ -590,5 +602,45 @@ export class App implements OnInit, OnDestroy {
     }
 
     return role.toLowerCase() === 'assistant' ? 'assistant' : 'user';
+  }
+
+  private loadKnowledgeDocuments(): void {
+    this.knowledgeDocumentsLoading.set(true);
+    this.knowledgeDocumentsError.set(null);
+
+    this.knowledgeService.listDocuments('ELECTRICAL').subscribe({
+      next: (documents) => {
+        const normalized = this.normalizeDocuments(documents);
+        this.knowledgeDocuments.set(normalized);
+      },
+      error: (err: HttpErrorResponse) => {
+        const fallback = 'Não foi possível carregar os documentos já anexados.';
+        this.knowledgeDocumentsError.set(err.error?.message ?? err.message ?? fallback);
+      },
+      complete: () => this.knowledgeDocumentsLoading.set(false)
+    });
+  }
+
+  private normalizeDocuments(documents: KnowledgeDocument[]): AttachedDocument[] {
+    if (!Array.isArray(documents)) {
+      return [];
+    }
+
+    return documents
+      .map((doc, index) => {
+        if (typeof doc === 'string') {
+          return { name: doc, id: index } satisfies AttachedDocument;
+        }
+
+        const name = doc?.name ?? 'Documento sem nome';
+
+        return {
+          id: doc?.id ?? index,
+          name,
+          size: typeof doc?.size === 'number' ? doc.size : undefined,
+          uploadedAt: doc?.uploadedAt ? new Date(doc.uploadedAt) : undefined
+        } satisfies AttachedDocument;
+      })
+      .filter((doc): doc is AttachedDocument => Boolean(doc?.name));
   }
 }

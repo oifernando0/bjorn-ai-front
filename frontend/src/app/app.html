@@ -11,6 +11,7 @@
       </div>
     </div>
 
+    <div class="sidebar__label">Navegação</div>
     <nav class="sidebar__nav" aria-label="Navegação principal">
       <button type="button" (click)="setActiveSection('intro')" [class.active]="activeSection() === 'intro'">
         <span class="sidebar__icon">✨</span>
@@ -25,14 +26,12 @@
         Anexar documentos
       </button>
     </nav>
-
-    <div class="sidebar__footer"></div>
   </aside>
 
   <main class="workspace">
     <header class="workspace__header">
       <div>
-        <p class="eyebrow">Bjorn AI</p>
+        <p class="eyebrow eyebrow--ghost">Bjorn AI</p>
         <h2>
           {{
             activeSection() === 'intro'
@@ -57,26 +56,29 @@
     <section *ngIf="activeSection() === 'intro'" class="panel hero">
       <div class="hero__copy">
         <p class="eyebrow">Apresentação</p>
-        <h3>Seu copiloto em engenharia elétrica</h3>
-        <p class="subtitle">
+        <h1>Seu copiloto em engenharia elétrica</h1>
+        <p class="subtitle subtitle--muted">
           O Bjorn interpreta especificações, esquemas e cadernos de exercícios para explicar conceitos,
           preparar relatórios e destrinchar cálculos com foco em aprendizado rápido.
         </p>
         <div class="hero__highlights">
-          <div class="pill">Documentação técnica guiada</div>
-          <div class="pill">Análise de PDFs volumosos</div>
-          <div class="pill">Contexto persistente entre conversas</div>
+          <div class="badge">Documentação técnica guiada</div>
+          <div class="badge">Análise de PDFs volumosos</div>
+          <div class="badge">Contexto persistente</div>
         </div>
         <div class="hero__cta">
-          <button type="button" (click)="setActiveSection('chat')">Abrir chat</button>
-          <button type="button" class="ghost" (click)="setActiveSection('docs')">Anexar documentos</button>
+          <button type="button" class="btn btn--primary" (click)="setActiveSection('chat')">Abrir chat</button>
+          <button type="button" class="btn btn--secondary" (click)="setActiveSection('docs')">Anexar documentos</button>
         </div>
       </div>
       <div class="hero__visual" aria-hidden="true">
-        <img src="/bjorn-logo.svg" alt="Ilustração do Bjorn com barba como agente elétrico" />
-        <div class="hero__badge">
-          <span>Especialista</span>
-          <strong>Engenharia Elétrica</strong>
+        <div class="hero__card">
+          <div class="hero__glow"></div>
+          <img src="/bjorn-logo.svg" alt="Ilustração do Bjorn com barba como agente elétrico" />
+          <div class="hero__badge">
+            <span>Especialista</span>
+            <strong>Engenharia Elétrica</strong>
+          </div>
         </div>
       </div>
     </section>
@@ -86,14 +88,12 @@
         <div>
           <p class="eyebrow">Base de conhecimento</p>
           <h3>Enviar documentos em PDF</h3>
-          <p class="subtitle">
-            Anexe os arquivos da sua disciplina e envie para
-            <code>http://localhost:8080/api/knowledge/ELECTRICAL/docs</code>.
-            Aceitamos múltiplos PDFs (até ~1GB) e mostraremos o progresso do envio.
+          <p class="subtitle subtitle--muted">
+            Anexe os arquivos da sua disciplina e envie para indexação. Aceitamos múltiplos PDFs (até ~1GB) e mostraremos o progresso do envio.
           </p>
         </div>
         <div class="uploads__actions">
-          <label class="upload-button" for="documentInput">
+          <label class="btn btn--secondary" for="documentInput">
             <input
               id="documentInput"
               type="file"
@@ -103,7 +103,7 @@
             />
             Anexar documentos
           </label>
-          <button type="button" (click)="uploadDocuments()" [disabled]="!canUploadDocuments()">
+          <button type="button" class="btn btn--primary" (click)="uploadDocuments()" [disabled]="!canUploadDocuments()">
             Enviar para indexação
           </button>
         </div>
@@ -140,16 +140,52 @@
             ></div>
             <span class="upload-card__progress-value">{{ uploadProgress() }}%</span>
           </div>
-          <button type="button" class="ghost" (click)="removeUploadItem(i)" [disabled]="isUploadingDocuments()">
+          <button type="button" class="btn btn--ghost" (click)="removeUploadItem(i)" [disabled]="isUploadingDocuments()">
             Remover
           </button>
         </div>
       </div>
       <ng-template #emptyUploads>
-        <div class="empty">
-          <p>Nenhum PDF selecionado. Clique em “Anexar documentos” para começar.</p>
+        <div class="empty empty--dashed">
+          <div class="empty__icon">📄</div>
+          <div>
+            <p class="empty__title">Nenhum PDF ainda.</p>
+            <p class="empty__text">Arraste seus arquivos para cá ou clique em “Anexar documentos”.</p>
+          </div>
         </div>
       </ng-template>
+    </section>
+
+      <div class="library">
+        <div class="library__header">
+          <div>
+            <p class="eyebrow eyebrow--ghost">Documentos anexados</p>
+            <h4>Base atual</h4>
+          </div>
+          <span class="meta" *ngIf="knowledgeDocumentsLoading()">Carregando...</span>
+          <span class="meta" *ngIf="!knowledgeDocumentsLoading() && knowledgeDocuments().length">{{ knowledgeDocuments().length }} documento(s)</span>
+        </div>
+        <div class="feedback" *ngIf="knowledgeDocumentsError() as docsError">
+          <p>⚠️ {{ docsError }}</p>
+        </div>
+        <div class="library__grid" *ngIf="knowledgeDocuments().length; else emptyLibrary">
+          <div class="doc-card" *ngFor="let doc of knowledgeDocuments()">
+            <div class="doc-card__icon">📑</div>
+            <div class="doc-card__body">
+              <div class="doc-card__title" [title]="doc.name">{{ doc.name }}</div>
+              <div class="doc-card__meta">
+                <span *ngIf="doc.size">{{ formatBytes(doc.size) }}</span>
+                <span *ngIf="doc.uploadedAt">• {{ doc.uploadedAt | date: 'shortDate' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ng-template #emptyLibrary>
+          <div class="empty">
+            <p>A base ainda não possui documentos anexados.</p>
+          </div>
+        </ng-template>
+      </div>
     </section>
 
     <section *ngIf="activeSection() === 'chat'" class="chat-layout">
@@ -159,7 +195,7 @@
             <span class="label">Conversa ativa</span>
             <span class="value">#{{ conversationId() }}</span>
           </div>
-          <button type="button" (click)="startNewConversation()" [disabled]="isInitializing() || isSending()">
+          <button type="button" class="btn btn--secondary" (click)="startNewConversation()" [disabled]="isInitializing() || isSending()">
             Nova conversa
           </button>
         </div>
@@ -194,7 +230,9 @@
             </span>
           </div>
 
-          <button type="submit" [disabled]="!canSubmit">Enviar mensagem</button>
+          <div class="form__actions">
+            <button type="submit" class="btn btn--primary" [disabled]="!canSubmit">Enviar mensagem</button>
+          </div>
         </form>
 
         <div class="feedback" *ngIf="error() as errorMessage">
@@ -203,11 +241,14 @@
 
         <div class="chat chat--main" *ngIf="history().length; else emptyState">
           <div class="entry" *ngFor="let item of displayHistory()" [class.user]="item.role === 'user'">
-            <div class="entry__header">
-              <span class="role">{{ item.role === 'user' ? 'Você' : 'Bjorn' }}</span>
-              <span class="meta" *ngIf="item.createdAt">{{ item.createdAt | date: 'short' }}</span>
+            <div class="entry__avatar" aria-hidden="true">{{ item.role === 'user' ? '👤' : '⚡' }}</div>
+            <div class="entry__content">
+              <div class="entry__header">
+                <span class="role">{{ item.role === 'user' ? 'Você' : 'Bjorn' }}</span>
+                <span class="meta" *ngIf="item.createdAt">{{ item.createdAt | date: 'short' }}</span>
+              </div>
+              <p class="entry__text">{{ item.text }}</p>
             </div>
-            <p>{{ item.text }}</p>
           </div>
         </div>
         <ng-template #emptyState>
@@ -232,7 +273,7 @@
               </p>
             </ng-template>
           </div>
-          <button type="button" class="ghost" (click)="togglePreviousConversations()">
+          <button type="button" class="btn btn--ghost" (click)="togglePreviousConversations()">
             {{ showPreviousConversations() ? 'Ocultar histórico' : 'Mostrar histórico' }}
             <span *ngIf="hasPreviousConversations()">({{ previousConversations().length }})</span>
           </button>
@@ -259,7 +300,7 @@
           </ng-template>
 
           <div class="previous__details" *ngIf="selectedPreviousConversationId(); else previousHint">
-            <div class="helper">
+            <div class="helper helper--tight">
               <span class="status" [class.loading]="previousConversationLoading()">
                 {{ previousConversationLoading() ? 'Carregando mensagens...' : 'Últimas mensagens' }}
               </span>
@@ -280,7 +321,7 @@
                   <span class="role">{{ item.role === 'user' ? 'Você' : 'Bjorn' }}</span>
                   <span class="meta" *ngIf="item.createdAt">{{ item.createdAt | date: 'short' }}</span>
                 </div>
-                <p>{{ item.text }}</p>
+                <p class="entry__text">{{ item.text }}</p>
               </div>
             </div>
             <ng-template #noPreviousMessages>

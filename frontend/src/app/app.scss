@@ -534,8 +534,8 @@ p {
 }
 
 .library__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
 }
 
@@ -548,7 +548,14 @@ p {
   border-radius: 14px;
   padding: 0.75rem 0.9rem;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, flex-basis 0.2s ease;
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.doc-card__body {
+  flex: 1;
+  min-width: 0;
 }
 
 .doc-card__body {
@@ -560,6 +567,7 @@ p {
   transform: translateY(-2px);
   border-color: rgba(56, 189, 248, 0.35);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  flex-basis: 100%;
 }
 
 .doc-card__icon {
@@ -573,6 +581,11 @@ p {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.doc-card:hover .doc-card__title {
+  white-space: normal;
+  overflow: visible;
 }
 
 .doc-card__meta {

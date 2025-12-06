@@ -63,6 +63,7 @@ export class App implements OnInit, OnDestroy {
   readonly isUploadingDocuments = computed(
     () => this.uploadProgress() > 0 && this.uploadProgress() < 100
   );
+  readonly activeSection = signal<'intro' | 'chat' | 'docs'>('intro');
   private readonly pendingAssistantId = 'pending-assistant';
   private pollTimer: ReturnType<typeof setTimeout> | null = null;
   private pollAttempts = 0;
@@ -92,6 +93,14 @@ export class App implements OnInit, OnDestroy {
       !this.isInitializing() &&
       Boolean(this.conversationId())
     );
+  }
+
+  setActiveSection(section: 'intro' | 'chat' | 'docs'): void {
+    this.activeSection.set(section);
+
+    if (section === 'chat') {
+      this.ensureConversation();
+    }
   }
 
   onFilesSelected(event: Event): void {

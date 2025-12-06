@@ -3,6 +3,13 @@ import { Injectable } from '@angular/core';
 import { environment } from '../environments/environment';
 import { Observable } from 'rxjs';
 
+export interface KnowledgeDocument {
+  name?: string;
+  size?: number;
+  uploadedAt?: string;
+  id?: string | number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class KnowledgeService {
   constructor(private readonly http: HttpClient) {}
@@ -18,5 +25,10 @@ export class KnowledgeService {
     });
 
     return this.http.request(request);
+  }
+
+  listDocuments(specialist: string): Observable<KnowledgeDocument[]> {
+    const url = `${environment.backendUrl}/api/knowledge/${encodeURIComponent(specialist)}/docs`;
+    return this.http.get<KnowledgeDocument[]>(url);
   }
 }

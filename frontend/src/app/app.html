@@ -1,229 +1,342 @@
-<main class="page">
-  <section class="hero">
-    <div class="hero__copy">
-      <p class="eyebrow">Bjorn AI</p>
-      <h1>Seu agente para engenharia elétrica</h1>
-      <p class="subtitle">
-        Converse com o Bjorn, um especialista em engenharia elétrica que documenta, analisa e detalha
-        projetos técnicos para acelerar seu trabalho diário.
-      </p>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar__brand">
+      <div class="sidebar__logo" aria-hidden="true">
+        <img src="/bjorn-logo.svg" alt="Bjorn AI" />
+      </div>
+      <div class="sidebar__text">
+        <p class="eyebrow">Bjorn AI</p>
+        <h1>Seu copiloto</h1>
+        <p class="subtitle">Organize documentos e converse em um só lugar.</p>
+      </div>
     </div>
-    <div class="hero__visual" aria-hidden="true">
-      <img src="/bjorn-logo.svg" alt="Ilustração do Bjorn com barba como agente elétrico" />
-    </div>
-  </section>
 
-  <section class="card uploads">
-    <div class="uploads__header">
+    <div class="sidebar__label">Navegação</div>
+    <nav class="sidebar__nav" aria-label="Navegação principal">
+      <button type="button" (click)="setActiveSection('intro')" [class.active]="activeSection() === 'intro'">
+        <span class="sidebar__icon">✨</span>
+        Apresentação
+      </button>
+      <button type="button" (click)="setActiveSection('chat')" [class.active]="activeSection() === 'chat'">
+        <span class="sidebar__icon">💬</span>
+        Chat
+      </button>
+      <button type="button" (click)="setActiveSection('docs')" [class.active]="activeSection() === 'docs'">
+        <span class="sidebar__icon">📎</span>
+        Anexar documentos
+      </button>
+    </nav>
+  </aside>
+
+  <main class="workspace">
+    <header class="workspace__header">
       <div>
-        <p class="eyebrow">Base de conhecimento</p>
-        <h2>Enviar documentos em PDF</h2>
+        <p class="eyebrow eyebrow--ghost">Bjorn AI</p>
+        <h2>
+          {{
+            activeSection() === 'intro'
+              ? 'Bem-vindo ao Bjorn'
+              : activeSection() === 'chat'
+                ? 'Converse com o agente'
+                : 'Organize sua base de PDFs'
+          }}
+        </h2>
         <p class="subtitle">
-          Anexe os arquivos da sua disciplina e envie para <code>http://localhost:8080/api/knowledge/ELECTRICAL/docs</code>.
-          Aceitamos múltiplos PDFs (até ~1GB) e mostraremos o progresso do envio.
+          {{
+            activeSection() === 'intro'
+              ? 'Saiba como o Bjorn acelera seus estudos e entregas em engenharia elétrica.'
+              : activeSection() === 'chat'
+                ? 'Envie mensagens, acompanhe o histórico e recupere conversas anteriores com um só clique.'
+                : 'Faça upload dos materiais em PDF e acompanhe o progresso de indexação.'
+          }}
         </p>
       </div>
-      <div class="uploads__actions">
-        <label class="upload-button" for="documentInput">
-          <input
-            id="documentInput"
-            type="file"
-            multiple
-            accept="application/pdf"
-            (change)="onFilesSelected($event)"
-          />
-          Anexar documentos
-        </label>
-        <button type="button" (click)="uploadDocuments()" [disabled]="!canUploadDocuments()">
-          Enviar para indexação
-        </button>
-      </div>
-    </div>
+    </header>
 
-    <div class="uploads__helper">
-      <span>{{ uploadItems().length }} arquivo(s) selecionado(s)</span>
-      <span>Total: {{ formatBytes(totalUploadSize()) }}</span>
-      <span *ngIf="isUploadingDocuments()">Progresso: {{ uploadProgress() }}%</span>
-    </div>
-
-    <div class="feedback" *ngIf="uploadError() as uploadErrorMessage">
-      <p>⚠️ {{ uploadErrorMessage }}</p>
-    </div>
-
-    <div class="success" *ngIf="uploadSuccess()">
-      ✅ Documentos enviados para indexação com sucesso.
-    </div>
-
-    <div class="uploads__grid" *ngIf="uploadItems().length; else emptyUploads">
-      <div class="upload-card" *ngFor="let item of uploadItems(); let i = index">
-        <div class="upload-card__info">
-          <span class="upload-card__title" [title]="item.file.name">{{ item.file.name }}</span>
-          <span class="upload-card__meta">{{ formatBytes(item.file.size) }}</span>
-        </div>
-        <div class="upload-card__progress" *ngIf="isUploadingDocuments()">
-          <div
-            class="upload-card__bar"
-            role="progressbar"
-            aria-valuemin="0"
-            aria-valuemax="100"
-            [attr.aria-valuenow]="uploadProgress()"
-            [style.width.%]="uploadProgress()"
-          ></div>
-          <span class="upload-card__progress-value">{{ uploadProgress() }}%</span>
-        </div>
-        <button type="button" class="ghost" (click)="removeUploadItem(i)" [disabled]="isUploadingDocuments()">
-          Remover
-        </button>
-      </div>
-    </div>
-    <ng-template #emptyUploads>
-      <div class="empty">
-        <p>Nenhum PDF selecionado. Clique em “Anexar documentos” para começar.</p>
-      </div>
-    </ng-template>
-  </section>
-
-  <section class="card">
-    <div class="conversation" *ngIf="conversationId(); else loadingConversation">
-      <span class="label">Conversa ativa</span>
-      <span class="value">#{{ conversationId() }}</span>
-      <button type="button" (click)="startNewConversation()" [disabled]="isInitializing() || isSending()">
-        Nova conversa
-      </button>
-    </div>
-    <ng-template #loadingConversation>
-      <div class="conversation conversation--loading">
-        <span class="label">Iniciando conversa com o backend...</span>
-      </div>
-    </ng-template>
-
-    <form class="form" (submit)="onSubmit($event)" novalidate>
-      <label for="message">Mensagem</label>
-      <textarea
-        id="message"
-        name="message"
-        [formControl]="messageControl"
-        placeholder="Ex.: Olá Bjorn, quais são minhas tarefas de hoje?"
-        rows="4"
-        [attr.aria-invalid]="messageControl.invalid"
-      ></textarea>
-
-      <div class="helper">
-        <span *ngIf="messageControl.invalid && (messageControl.touched || messageControl.dirty)">
-          A mensagem é obrigatória e deve ter no máximo 500 caracteres.
-        </span>
-        <span class="status" [class.loading]="isSending()">
-          <ng-container *ngIf="isInitializing(); else sendingState">
-            {{ 'Conectando ao backend...' }}
-          </ng-container>
-          <ng-template #sendingState>
-            {{ isSending() ? 'Enviando...' : 'Pronto para enviar' }}
-          </ng-template>
-        </span>
-      </div>
-
-      <button type="submit" [disabled]="!canSubmit">Enviar mensagem</button>
-    </form>
-
-    <div class="feedback" *ngIf="error() as errorMessage">
-      <p>⚠️ {{ errorMessage }}</p>
-    </div>
-
-    <div class="chat chat--main" *ngIf="history().length; else emptyState">
-      <div class="entry" *ngFor="let item of displayHistory()" [class.user]="item.role === 'user'">
-        <div class="entry__header">
-          <span class="role">{{ item.role === 'user' ? 'Você' : 'Bjorn' }}</span>
-          <span class="meta" *ngIf="item.createdAt">{{ item.createdAt | date: 'short' }}</span>
-        </div>
-        <p>{{ item.text }}</p>
-      </div>
-    </div>
-    <ng-template #emptyState>
-      <div class="empty">
-        <p>Envie sua primeira mensagem para iniciar a conversa.</p>
-      </div>
-    </ng-template>
-  </section>
-
-  <section class="previous" [class.previous--open]="showPreviousConversations()">
-    <div class="previous__header">
-      <div>
-        <p class="eyebrow eyebrow--ghost">Histórico</p>
-        <h2>Conferir conversas anteriores</h2>
-        <p class="subtitle" *ngIf="hasPreviousConversations(); else noHistoryCopy">
-          Revise rapidamente o que já foi discutido em conversas anteriores (#1, #2, #3...) sem sair da
-          conversa atual.
+    <section *ngIf="activeSection() === 'intro'" class="panel hero">
+      <div class="hero__copy">
+        <p class="eyebrow">Apresentação</p>
+        <h1>Seu copiloto em engenharia elétrica</h1>
+        <p class="subtitle subtitle--muted">
+          O Bjorn interpreta especificações, esquemas e cadernos de exercícios para explicar conceitos,
+          preparar relatórios e destrinchar cálculos com foco em aprendizado rápido.
         </p>
-        <ng-template #noHistoryCopy>
-          <p class="subtitle">
-            As conversas anteriores aparecem aqui quando você inicia uma nova sessão. Clique para abrir o
-            painel e voltar para elas sempre que precisar.
+        <div class="hero__highlights">
+          <div class="badge">Documentação técnica guiada</div>
+          <div class="badge">Análise de PDFs volumosos</div>
+          <div class="badge">Contexto persistente</div>
+        </div>
+        <div class="hero__cta">
+          <button type="button" class="btn btn--primary" (click)="setActiveSection('chat')">Abrir chat</button>
+          <button type="button" class="btn btn--secondary" (click)="setActiveSection('docs')">Anexar documentos</button>
+        </div>
+      </div>
+      <div class="hero__visual" aria-hidden="true">
+        <div class="hero__card">
+          <div class="hero__glow"></div>
+          <img src="/bjorn-logo.svg" alt="Ilustração do Bjorn com barba como agente elétrico" />
+          <div class="hero__badge">
+            <span>Especialista</span>
+            <strong>Engenharia Elétrica</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section *ngIf="activeSection() === 'docs'" class="panel uploads">
+      <div class="uploads__header">
+        <div>
+          <p class="eyebrow">Base de conhecimento</p>
+          <h3>Enviar documentos em PDF</h3>
+          <p class="subtitle subtitle--muted">
+            Anexe os arquivos da sua disciplina e envie para indexação. Aceitamos múltiplos PDFs (até ~1GB) e mostraremos o progresso do envio.
           </p>
-        </ng-template>
-      </div>
-      <button type="button" class="ghost" (click)="togglePreviousConversations()">
-        {{ showPreviousConversations() ? 'Ocultar histórico' : 'Mostrar histórico' }}
-        <span *ngIf="hasPreviousConversations()">({{ previousConversations().length }})</span>
-      </button>
-    </div>
-
-    <div class="previous__content" *ngIf="showPreviousConversations()">
-      <div class="previous__list" role="list" *ngIf="hasPreviousConversations(); else emptyPrevious">
-        <button
-          type="button"
-          role="listitem"
-          *ngFor="let id of previousConversations()"
-          (click)="loadPreviousConversation(id)"
-          [class.active]="id === selectedPreviousConversationId()"
-          [disabled]="previousConversationLoading()"
-        >
-          #{{ id }}
-        </button>
+        </div>
+        <div class="uploads__actions">
+          <label class="btn btn--secondary" for="documentInput">
+            <input
+              id="documentInput"
+              type="file"
+              multiple
+              accept="application/pdf"
+              (change)="onFilesSelected($event)"
+            />
+            Anexar documentos
+          </label>
+          <button type="button" class="btn btn--primary" (click)="uploadDocuments()" [disabled]="!canUploadDocuments()">
+            Enviar para indexação
+          </button>
+        </div>
       </div>
 
-      <ng-template #emptyPrevious>
-        <div class="empty inline">
-          <p>Nenhuma conversa anterior encontrada. Inicie uma nova conversa para salvá-la aqui.</p>
+      <div class="uploads__helper">
+        <span>{{ uploadItems().length }} arquivo(s) selecionado(s)</span>
+        <span>Total: {{ formatBytes(totalUploadSize()) }}</span>
+        <span *ngIf="isUploadingDocuments()">Progresso: {{ uploadProgress() }}%</span>
+      </div>
+
+      <div class="feedback" *ngIf="uploadError() as uploadErrorMessage">
+        <p>⚠️ {{ uploadErrorMessage }}</p>
+      </div>
+
+      <div class="success" *ngIf="uploadSuccess()">
+        ✅ Documentos enviados para indexação com sucesso.
+      </div>
+
+      <div class="uploads__grid" *ngIf="uploadItems().length; else emptyUploads">
+        <div class="upload-card" *ngFor="let item of uploadItems(); let i = index">
+          <div class="upload-card__info">
+            <span class="upload-card__title" [title]="item.file.name">{{ item.file.name }}</span>
+            <span class="upload-card__meta">{{ formatBytes(item.file.size) }}</span>
+          </div>
+          <div class="upload-card__progress" *ngIf="isUploadingDocuments()">
+            <div
+              class="upload-card__bar"
+              role="progressbar"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              [attr.aria-valuenow]="uploadProgress()"
+              [style.width.%]="uploadProgress()"
+            ></div>
+            <span class="upload-card__progress-value">{{ uploadProgress() }}%</span>
+          </div>
+          <button type="button" class="btn btn--ghost" (click)="removeUploadItem(i)" [disabled]="isUploadingDocuments()">
+            Remover
+          </button>
+        </div>
+      </div>
+      <ng-template #emptyUploads>
+        <div class="empty empty--dashed">
+          <div class="empty__icon">📄</div>
+          <div>
+            <p class="empty__title">Nenhum PDF ainda.</p>
+            <p class="empty__text">Arraste seus arquivos para cá ou clique em “Anexar documentos”.</p>
+          </div>
         </div>
       </ng-template>
 
-      <div class="previous__details" *ngIf="selectedPreviousConversationId(); else previousHint">
-        <div class="helper">
-          <span class="status" [class.loading]="previousConversationLoading()">
-            {{ previousConversationLoading() ? 'Carregando mensagens...' : 'Últimas mensagens' }}
-          </span>
-          <span class="meta">Conversa #{{ selectedPreviousConversationId() }}</span>
+      <div class="library">
+        <div class="library__header">
+          <div>
+            <p class="eyebrow eyebrow--ghost">Documentos anexados</p>
+            <h4>Base atual</h4>
+          </div>
+          <span class="meta" *ngIf="knowledgeDocumentsLoading()">Carregando...</span>
+          <span class="meta" *ngIf="!knowledgeDocumentsLoading() && knowledgeDocuments().length">{{ knowledgeDocuments().length }} documento(s)</span>
         </div>
-
-        <div class="feedback" *ngIf="previousConversationError() as previousError">
-          <p>⚠️ {{ previousError }}</p>
+        <div class="feedback" *ngIf="knowledgeDocumentsError() as docsError">
+          <p>⚠️ {{ docsError }}</p>
         </div>
-
-        <div class="chat compact" *ngIf="previousConversationHistory().length; else noPreviousMessages">
-          <div
-            class="entry"
-            *ngFor="let item of previousDisplayHistory()"
-            [class.user]="item.role === 'user'"
-          >
-            <div class="entry__header">
-              <span class="role">{{ item.role === 'user' ? 'Você' : 'Bjorn' }}</span>
-              <span class="meta" *ngIf="item.createdAt">{{ item.createdAt | date: 'short' }}</span>
+        <div class="library__grid" *ngIf="knowledgeDocuments().length; else emptyLibrary">
+          <div class="doc-card" *ngFor="let doc of knowledgeDocuments()">
+            <div class="doc-card__icon">📑</div>
+            <div class="doc-card__body">
+              <div class="doc-card__title" [title]="doc.name">{{ doc.name }}</div>
+              <div class="doc-card__meta">
+                <span *ngIf="doc.size">{{ formatBytes(doc.size) }}</span>
+                <span *ngIf="doc.uploadedAt">• {{ doc.uploadedAt | date: 'shortDate' }}</span>
+              </div>
             </div>
-            <p>{{ item.text }}</p>
           </div>
         </div>
-        <ng-template #noPreviousMessages>
+        <ng-template #emptyLibrary>
           <div class="empty">
-            <p>Sem mensagens armazenadas para esta conversa.</p>
+            <p>A base ainda não possui documentos anexados.</p>
+          </div>
+        </ng-template>
+      </div>
+    </section>
+
+    <section *ngIf="activeSection() === 'chat'" class="chat-layout">
+      <div class="panel chat-panel">
+        <div class="conversation" *ngIf="conversationId(); else loadingConversation">
+          <div class="conversation__badge">
+            <span class="label">Conversa ativa</span>
+            <span class="value">#{{ conversationId() }}</span>
+          </div>
+          <button type="button" class="btn btn--secondary" (click)="startNewConversation()" [disabled]="isInitializing() || isSending()">
+            Nova conversa
+          </button>
+        </div>
+        <ng-template #loadingConversation>
+          <div class="conversation conversation--loading">
+            <span class="label">Iniciando conversa com o backend...</span>
+          </div>
+        </ng-template>
+
+        <form class="form" (submit)="onSubmit($event)" novalidate>
+          <label for="message">Mensagem</label>
+          <textarea
+            id="message"
+            name="message"
+            [formControl]="messageControl"
+            placeholder="Ex.: Olá Bjorn, quais são minhas tarefas de hoje?"
+            rows="4"
+            [attr.aria-invalid]="messageControl.invalid"
+          ></textarea>
+
+          <div class="helper">
+            <span *ngIf="messageControl.invalid && (messageControl.touched || messageControl.dirty)">
+              A mensagem é obrigatória e deve ter no máximo 500 caracteres.
+            </span>
+            <span class="status" [class.loading]="isSending()">
+              <ng-container *ngIf="isInitializing(); else sendingState">
+                {{ 'Conectando ao backend...' }}
+              </ng-container>
+              <ng-template #sendingState>
+                {{ isSending() ? 'Enviando...' : 'Pronto para enviar' }}
+              </ng-template>
+            </span>
+          </div>
+
+          <div class="form__actions">
+            <button type="submit" class="btn btn--primary" [disabled]="!canSubmit">Enviar mensagem</button>
+          </div>
+        </form>
+
+        <div class="feedback" *ngIf="error() as errorMessage">
+          <p>⚠️ {{ errorMessage }}</p>
+        </div>
+
+        <div class="chat chat--main" *ngIf="history().length; else emptyState">
+          <div class="entry" *ngFor="let item of displayHistory()" [class.user]="item.role === 'user'">
+            <div class="entry__avatar" aria-hidden="true">{{ item.role === 'user' ? '👤' : '⚡' }}</div>
+            <div class="entry__content">
+              <div class="entry__header">
+                <span class="role">{{ item.role === 'user' ? 'Você' : 'Bjorn' }}</span>
+                <span class="meta" *ngIf="item.createdAt">{{ item.createdAt | date: 'short' }}</span>
+              </div>
+              <p class="entry__text">{{ item.text }}</p>
+            </div>
+          </div>
+        </div>
+        <ng-template #emptyState>
+          <div class="empty">
+            <p>Envie sua primeira mensagem para iniciar a conversa.</p>
           </div>
         </ng-template>
       </div>
 
-      <ng-template #previousHint>
-        <div class="empty">
-          <p>Selecione uma conversa anterior para revisar as mensagens.</p>
+      <div class="panel previous-panel" [class.previous--open]="showPreviousConversations()">
+        <div class="previous__header">
+          <div>
+            <p class="eyebrow eyebrow--ghost">Histórico</p>
+            <h3>Conferir conversas anteriores</h3>
+            <p class="subtitle" *ngIf="hasPreviousConversations(); else noHistoryCopy">
+              Revise rapidamente o que já foi discutido sem sair da conversa atual.
+            </p>
+            <ng-template #noHistoryCopy>
+              <p class="subtitle">
+                As conversas anteriores aparecem aqui quando você inicia uma nova sessão. Clique para abrir o
+                painel e voltar para elas sempre que precisar.
+              </p>
+            </ng-template>
+          </div>
+          <button type="button" class="btn btn--ghost" (click)="togglePreviousConversations()">
+            {{ showPreviousConversations() ? 'Ocultar histórico' : 'Mostrar histórico' }}
+            <span *ngIf="hasPreviousConversations()">({{ previousConversations().length }})</span>
+          </button>
         </div>
-      </ng-template>
-    </div>
-  </section>
-</main>
+
+        <div class="previous__content" *ngIf="showPreviousConversations()">
+          <div class="previous__list" role="list" *ngIf="hasPreviousConversations(); else emptyPrevious">
+            <button
+              type="button"
+              role="listitem"
+              *ngFor="let id of previousConversations()"
+              (click)="loadPreviousConversation(id)"
+              [class.active]="id === selectedPreviousConversationId()"
+              [disabled]="previousConversationLoading()"
+            >
+              #{{ id }}
+            </button>
+          </div>
+
+          <ng-template #emptyPrevious>
+            <div class="empty inline">
+              <p>Nenhuma conversa anterior encontrada. Inicie uma nova conversa para salvá-la aqui.</p>
+            </div>
+          </ng-template>
+
+          <div class="previous__details" *ngIf="selectedPreviousConversationId(); else previousHint">
+            <div class="helper helper--tight">
+              <span class="status" [class.loading]="previousConversationLoading()">
+                {{ previousConversationLoading() ? 'Carregando mensagens...' : 'Últimas mensagens' }}
+              </span>
+              <span class="meta">Conversa #{{ selectedPreviousConversationId() }}</span>
+            </div>
+
+            <div class="feedback" *ngIf="previousConversationError() as previousError">
+              <p>⚠️ {{ previousError }}</p>
+            </div>
+
+            <div class="chat compact" *ngIf="previousConversationHistory().length; else noPreviousMessages">
+              <div
+                class="entry"
+                *ngFor="let item of previousDisplayHistory()"
+                [class.user]="item.role === 'user'"
+              >
+                <div class="entry__header">
+                  <span class="role">{{ item.role === 'user' ? 'Você' : 'Bjorn' }}</span>
+                  <span class="meta" *ngIf="item.createdAt">{{ item.createdAt | date: 'short' }}</span>
+                </div>
+                <p class="entry__text">{{ item.text }}</p>
+              </div>
+            </div>
+            <ng-template #noPreviousMessages>
+              <div class="empty">
+                <p>Sem mensagens armazenadas para esta conversa.</p>
+              </div>
+            </ng-template>
+          </div>
+
+          <ng-template #previousHint>
+            <div class="empty">
+              <p>Selecione uma conversa anterior para revisar as mensagens.</p>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>

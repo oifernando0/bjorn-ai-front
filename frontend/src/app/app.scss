@@ -558,6 +558,11 @@ p {
   min-width: 0;
 }
 
+.doc-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
 .doc-card:hover {
   transform: translateY(-2px);
   border-color: rgba(56, 189, 248, 0.35);

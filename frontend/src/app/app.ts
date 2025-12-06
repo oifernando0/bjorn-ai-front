@@ -641,6 +641,6 @@ export class App implements OnInit, OnDestroy {
           uploadedAt: doc?.uploadedAt ? new Date(doc.uploadedAt) : undefined
         } satisfies AttachedDocument;
       })
-      .filter((doc): doc is AttachedDocument => Boolean(doc?.name));
+      .filter((doc) => Boolean(doc?.name));
   }
 }

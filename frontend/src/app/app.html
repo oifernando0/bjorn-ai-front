@@ -1,7 +1,7 @@
 <div class="shell">
   <aside class="sidebar">
     <div class="sidebar__brand">
-      <div class="sidebar__logo" aria-hidden="true">
+      <div class="sidebar__logo" aria-hidden="true" title="Bjorn, seu copiloto elétrico">
         <img src="/bjorn-logo.svg" alt="Bjorn AI" />
       </div>
       <div class="sidebar__text">
@@ -24,6 +24,7 @@
       <button type="button" (click)="setActiveSection('docs')" [class.active]="activeSection() === 'docs'">
         <span class="sidebar__icon">📎</span>
         Anexar documentos
+        <span class="sidebar__badge" *ngIf="!knowledgeDocumentsLoading()">{{ knowledgeDocuments().length }}</span>
       </button>
     </nav>
   </aside>
@@ -32,28 +33,31 @@
     <header class="workspace__header">
       <div>
         <p class="eyebrow eyebrow--ghost">Bjorn AI</p>
-        <h2>
+        <div class="workspace__title-row">
+          <h2>
+            {{
+              activeSection() === 'intro'
+                ? 'Bem-vindo ao Bjorn – Copiloto em engenharia elétrica para PDFs técnicos'
+                : activeSection() === 'chat'
+                  ? 'Converse com o agente sem perder o contexto'
+                  : 'Organize sua base de PDFs sem atrito'
+            }}
+          </h2>
+          <a class="workspace__link" href="#como-funciona">Ver guia rápido</a>
+        </div>
+        <p class="subtitle workspace__subtitle">
           {{
             activeSection() === 'intro'
-              ? 'Bem-vindo ao Bjorn'
+              ? 'Ferramentas visuais, chat e uploads num só painel para acelerar estudos de proteção, instalações e sistemas de potência.'
               : activeSection() === 'chat'
-                ? 'Converse com o agente'
-                : 'Organize sua base de PDFs'
-          }}
-        </h2>
-        <p class="subtitle">
-          {{
-            activeSection() === 'intro'
-              ? 'Saiba como o Bjorn acelera seus estudos e entregas em engenharia elétrica.'
-              : activeSection() === 'chat'
-                ? 'Envie mensagens, acompanhe o histórico e recupere conversas anteriores com um só clique.'
-                : 'Faça upload dos materiais em PDF e acompanhe o progresso de indexação.'
+                ? 'Envie mensagens, visualize sugestões prontas e acompanhe o estado do assistente enquanto ele pensa.'
+                : 'Anexe múltiplos PDFs, veja o avanço e monitore a quantidade disponível na base atual.'
           }}
         </p>
       </div>
     </header>
 
-    <section *ngIf="activeSection() === 'intro'" class="panel hero">
+    <section *ngIf="activeSection() === 'intro'" class="panel hero" id="intro">
       <div class="hero__copy">
         <p class="eyebrow">Apresentação</p>
         <h1>Seu copiloto em engenharia elétrica</h1>
@@ -61,13 +65,33 @@
           O Bjorn interpreta especificações, esquemas e cadernos de exercícios para explicar conceitos,
           preparar relatórios e destrinchar cálculos com foco em aprendizado rápido.
         </p>
+        <p class="persona">Especialista em engenharia elétrica com foco em proteção, instalações e sistemas de potência.</p>
         <div class="hero__highlights">
-          <div class="badge">Documentação técnica guiada</div>
-          <div class="badge">Análise de PDFs volumosos</div>
-          <div class="badge">Contexto persistente</div>
+          <div class="feature-card">
+            <span class="feature-card__icon">🧭</span>
+            <div class="feature-card__text">
+              <p class="feature-card__title">Documentação técnica guiada</p>
+              <p class="feature-card__desc">Checklist, referências e explicações curtas para navegar nos PDFs.</p>
+            </div>
+          </div>
+          <div class="feature-card">
+            <span class="feature-card__icon">📊</span>
+            <div class="feature-card__text">
+              <p class="feature-card__title">Análise de PDFs volumosos</p>
+              <p class="feature-card__desc">Resume capítulos e destaca fórmulas críticas sem perder contexto.</p>
+            </div>
+          </div>
+          <div class="feature-card">
+            <span class="feature-card__icon">🔁</span>
+            <div class="feature-card__text">
+              <p class="feature-card__title">Contexto persistente</p>
+              <p class="feature-card__desc">Mantém o histórico ativo enquanto novas perguntas chegam.</p>
+            </div>
+          </div>
         </div>
+        <div class="micro-callout">⚡ Treinado na sua própria biblioteca de PDFs. Sem mistério.</div>
         <div class="hero__cta">
-          <button type="button" class="btn btn--primary" (click)="setActiveSection('chat')">Abrir chat</button>
+          <button type="button" class="btn btn--primary" (click)="setActiveSection('chat')">⚡ Abrir chat</button>
           <button type="button" class="btn btn--secondary" (click)="setActiveSection('docs')">Anexar documentos</button>
         </div>
       </div>
@@ -78,6 +102,36 @@
           <div class="hero__badge">
             <span>Especialista</span>
             <strong>Engenharia Elétrica</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section *ngIf="activeSection() === 'intro'" class="panel how" id="como-funciona">
+      <div class="how__header">
+        <p class="eyebrow">Como funciona?</p>
+        <h3>3 passos para usar o Bjorn</h3>
+      </div>
+      <div class="how__steps">
+        <div class="step">
+          <span class="step__icon">📎</span>
+          <div>
+            <p class="step__title">Anexe seus PDFs</p>
+            <p class="subtitle">Envie cadernos, listas e apostilas direto para a base.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step__icon">🤖</span>
+          <div>
+            <p class="step__title">Bjorn indexa e entende o conteúdo</p>
+            <p class="subtitle">Processa o material e mantém o contexto pronto para consulta.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step__icon">💬</span>
+          <div>
+            <p class="step__title">Você faz perguntas no chat</p>
+            <p class="subtitle">Recebe respostas com citação e trilha de raciocínio.</p>
           </div>
         </div>
       </div>
@@ -104,7 +158,7 @@
             Anexar documentos
           </label>
           <button type="button" class="btn btn--primary" (click)="uploadDocuments()" [disabled]="!canUploadDocuments()">
-            Enviar para indexação
+            ⚡ Enviar para indexação
           </button>
         </div>
       </div>
@@ -228,8 +282,19 @@
             </span>
           </div>
 
+          <div class="suggestions">
+            <button
+              type="button"
+              class="chip"
+              *ngFor="let suggestion of quickSuggestions"
+              (click)="useSuggestion(suggestion)"
+            >
+              {{ suggestion }}
+            </button>
+          </div>
+
           <div class="form__actions">
-            <button type="submit" class="btn btn--primary" [disabled]="!canSubmit">Enviar mensagem</button>
+            <button type="submit" class="btn btn--primary" [disabled]="!canSubmit">⚡ Enviar mensagem</button>
           </div>
         </form>
 
@@ -238,14 +303,30 @@
         </div>
 
         <div class="chat chat--main" *ngIf="history().length; else emptyState">
-          <div class="entry" *ngFor="let item of displayHistory()" [class.user]="item.role === 'user'">
+          <div
+            class="entry"
+            *ngFor="let item of displayHistory()"
+            [class.user]="item.role === 'user'"
+            [class.assistant]="item.role === 'assistant'"
+          >
             <div class="entry__avatar" aria-hidden="true">{{ item.role === 'user' ? '👤' : '⚡' }}</div>
             <div class="entry__content">
               <div class="entry__header">
                 <span class="role">{{ item.role === 'user' ? 'Você' : 'Bjorn' }}</span>
                 <span class="meta" *ngIf="item.createdAt">{{ item.createdAt | date: 'short' }}</span>
               </div>
-              <p class="entry__text">{{ item.text }}</p>
+              <p
+                class="entry__text"
+                [class.entry__text--assistant]="item.role === 'assistant'"
+                [class.entry__text--pending]="isPendingAssistant(item)"
+              >
+                <ng-container *ngIf="!isPendingAssistant(item); else pendingDots">{{ item.text }}</ng-container>
+              </p>
+              <ng-template #pendingDots>
+                <span class="typing-dots" aria-live="polite" aria-label="Assistente pensando">
+                  <span></span><span></span><span></span>
+                </span>
+              </ng-template>
             </div>
           </div>
         </div>

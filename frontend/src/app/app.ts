@@ -58,6 +58,11 @@ export class App implements OnInit, OnDestroy {
   readonly knowledgeDocumentsLoading = signal(false);
   readonly knowledgeDocumentsError = signal<string | null>(null);
   readonly displayHistory = computed(() => [...this.history()].reverse());
+  readonly quickSuggestions = [
+    'Explique este conceito com base na base atual',
+    'Monte um resumo para prova',
+    'Liste fórmulas importantes deste capítulo'
+  ];
   readonly totalUploadSize = computed(() =>
     this.uploadItems().reduce((size, item) => size + item.file.size, 0)
   );
@@ -112,6 +117,12 @@ export class App implements OnInit, OnDestroy {
     if (section === 'chat') {
       this.ensureConversation();
     }
+  }
+
+  useSuggestion(text: string): void {
+    this.messageControl.setValue(text);
+    this.messageControl.markAsDirty();
+    this.activeSection.set('chat');
   }
 
   onFilesSelected(event: Event): void {
@@ -524,7 +535,7 @@ export class App implements OnInit, OnDestroy {
 
     return [
       ...entriesWithoutPlaceholder,
-      { role: 'assistant', text: 'Verificando documentação', id: this.pendingAssistantId }
+      { role: 'assistant', text: 'Pensando...', id: this.pendingAssistantId }
     ];
   }
 
@@ -594,6 +605,10 @@ export class App implements OnInit, OnDestroy {
     this.history.update((entries) =>
       entries.filter((entry) => entry.id !== this.pendingAssistantId)
     );
+  }
+
+  isPendingAssistant(entry: ChatEntry): boolean {
+    return entry.id === this.pendingAssistantId;
   }
 
   private normalizeRole(role?: string): ChatEntry['role'] {
